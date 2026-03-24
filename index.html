@@ -72,67 +72,7 @@
     const MaxSite = () => {
       const [activeTab, setActiveTab] = useState('brand');
 
-      // 自動緩滾：閒置一段時間後自動往下捲動，到底後跳下一頁
-      const tabOrder = ['brand', 'services', 'blog', 'reviews', 'contact'];
-      const activeTabRef = useRef(activeTab);
-      useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
-
-      useEffect(() => {
-        let idleTimer = null;
-        let scrollInterval = null;
-        let isAutoScrolling = false;
-        const IDLE_DELAY = 5000;
-        const SCROLL_SPEED = 1.2;
-        const SCROLL_TICK = 30;
-
-        const startAutoScroll = () => {
-          if (scrollInterval) return;
-          isAutoScrolling = true;
-          scrollInterval = setInterval(() => {
-            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-            if (window.scrollY >= maxScroll - 1) {
-              stopAutoScroll();
-              // 跳到下一個頁面
-              const currentIdx = tabOrder.indexOf(activeTabRef.current);
-              const nextIdx = (currentIdx + 1) % tabOrder.length;
-              setActiveTab(tabOrder[nextIdx]);
-              window.scrollTo({ top: 0 });
-              // 等待後繼續捲動
-              idleTimer = setTimeout(startAutoScroll, IDLE_DELAY);
-              return;
-            }
-            window.scrollBy(0, SCROLL_SPEED);
-          }, SCROLL_TICK);
-        };
-
-        const stopAutoScroll = () => {
-          isAutoScrolling = false;
-          if (scrollInterval) {
-            clearInterval(scrollInterval);
-            scrollInterval = null;
-          }
-        };
-
-        const resetIdleTimer = (e) => {
-          if (e && e.type === 'scroll' && isAutoScrolling) return;
-          stopAutoScroll();
-          clearTimeout(idleTimer);
-          idleTimer = setTimeout(startAutoScroll, IDLE_DELAY);
-        };
-
-        const userEvents = ['mousemove', 'mousedown', 'touchstart', 'keydown', 'wheel'];
-        userEvents.forEach(e => window.addEventListener(e, resetIdleTimer, { passive: true }));
-        window.addEventListener('scroll', resetIdleTimer, { passive: true });
-
-        idleTimer = setTimeout(startAutoScroll, IDLE_DELAY);
-
-        return () => {
-          clearTimeout(idleTimer);
-          stopAutoScroll();
-          userEvents.forEach(e => window.removeEventListener(e, resetIdleTimer));
-          window.removeEventListener('scroll', resetIdleTimer);
-        };
-      }, []);
+      // 自動緩滾功能已停用
 
       const initialReviews = [
         { id: 1, name: "陳小姐", tag: "28歲 / 行銷企劃", stars: 5, comment: "原本對職涯方向很模糊，跟 Max 聊完 30 分鐘後，他幫我把雜亂的選項拆解得很清楚，終於知道下一步該往哪裡走。推薦給同樣卡住的人！", date: "2024-05-15" },
