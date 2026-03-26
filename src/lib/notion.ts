@@ -45,23 +45,36 @@ export const getPublishedPosts = async (): Promise<Post[]> => {
   if (!databaseId) return [];
 
   try {
-    const response = await (notion.databases as any).query({
-      database_id: databaseId,
-      filter: {
-        property: '發布狀態',
-        select: {
-          equals: 'Published',
-        },
+    const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
+        'Notion-Version': '2022-06-28',
+        'Content-Type': 'application/json'
       },
-      sorts: [
-        {
-          timestamp: 'created_time',
-          direction: 'descending',
+      body: JSON.stringify({
+        filter: {
+          property: '發布狀態',
+          select: {
+            equals: 'Published'
+          }
         },
-      ],
+        sorts: [
+          {
+            timestamp: 'created_time',
+            direction: 'descending'
+          }
+        ]
+      })
     });
+    
+    if (!response.ok) {
+      console.error('Notion API Error:', await response.text());
+      return [];
+    }
 
-    return response.results.map((page: any) => {
+    const result = await response.json();
+    return result.results.map((page: any) => {
       const p = page.properties;
       return {
         id: page.id,
