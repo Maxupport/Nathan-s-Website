@@ -114,12 +114,18 @@ const fetchNotionBlocksAsMarkdown = async (blockId: string): Promise<string> => 
   });
 
   if (!response.ok) {
-    console.error('Failed to fetch Notion blocks', await response.text());
-    return '';
+    const errText = await response.text();
+    console.error('Failed to fetch Notion blocks', errText);
+    return `> ⚠️ **系統偵錯訊息:** 無法讀取文章區塊 \n> HTTP Status: ${response.status}\n> Response: ${errText}`;
   }
 
   const data = await response.json();
   const blocks = data.results || [];
+  
+  if (blocks.length === 0) {
+    return `> ⚠️ **系統偵錯訊息:** Notion API 回傳成功，但是區塊 (Blocks) 數量為 0！\n> 這代表文章內容可能 真的是空的，或是 Notion 沒有權限讀取這篇文章內文。\n> Raw Data: \`${JSON.stringify(data)}\``;
+  }
+  
   let markdown = '';
 
   for (const block of blocks) {
@@ -173,6 +179,7 @@ const fetchNotionBlocksAsMarkdown = async (blockId: string): Promise<string> => 
         markdown += `[${content.url}](${content.url})\n\n`;
         break;
       default:
+        markdown += `> ℹ️ [不支援的 Notion 區塊類型: ${type}]\n\n`;
         break;
     }
   }
