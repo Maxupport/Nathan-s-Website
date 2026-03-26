@@ -75,7 +75,7 @@ export const getPublishedPosts = async (withExcerpts = false): Promise<Post[]> =
         id: page.id,
         title: getPropertyText(p['標題'] || p.Title || p.Name),
         excerpt: getPropertyText(p['文字'] || p['內文'] || p['簡介'] || p.Text || p.Excerpt || p.Description),
-        slug: getPropertyText(p['短網址'] || p.Slug || p.URL),
+        slug: getPropertyText(p['短網址'] || p.Slug || p.URL).replace(/[?#&/]/g, '').trim(),
         status: getPropertyText(p['發布狀態'] || p.Status),
         tags: getPropertyTags(p['#標籤'] || p.Tags || p['標籤']),
         cover: getPropertyCover(p['封面圖'] || p.Cover || p.Thumbnail),
