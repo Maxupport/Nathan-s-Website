@@ -34,7 +34,7 @@ const getPropertyCover = (prop: any): string => {
   return '';
 };
 
-export const getPublishedPosts = async (): Promise<Post[]> => {
+export const getPublishedPosts = async (withExcerpts = false): Promise<Post[]> => {
   const databaseId = process.env.NOTION_DATABASE_ID;
   if (!databaseId) return [];
 
@@ -67,12 +67,10 @@ export const getPublishedPosts = async (): Promise<Post[]> => {
       return [];
     }
 
-    const result = await response.json();
-    return result.results.map((page: any) => {
+    let postsWithoutBody = result.results.map((page: any) => {
       const p = page.properties;
       return {
         id: page.id,
-        // Match user's setup based on the exact names they were told
         title: getPropertyText(p['標題'] || p.Title || p.Name),
         excerpt: getPropertyText(p['文字'] || p['內文'] || p['簡介'] || p.Text || p.Excerpt || p.Description),
         slug: getPropertyText(p['短網址'] || p.Slug || p.URL),
@@ -81,7 +79,36 @@ export const getPublishedPosts = async (): Promise<Post[]> => {
         cover: getPropertyCover(p['封面圖'] || p.Cover || p.Thumbnail),
         date: page.created_time,
       };
-    }).filter((post: any) => post.title); // Ensure it's not a completely empty row
+    }).filter((post: any) => post.title);
+    
+    if (withExcerpts) {
+      for (const post of postsWithoutBody) {
+        if (!post.excerpt) {
+          try {
+            const blocksRes = await fetch(`https://api.notion.com/v1/blocks/${post.id}/children?page_size=10`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
+                'Notion-Version': '2022-06-28',
+              }
+            }).then(r => r.json());
+            
+            if (blocksRes.results) {
+              for (const b of blocksRes.results) {
+                if (b.type === 'paragraph' && b.paragraph.rich_text?.length > 0) {
+                  post.excerpt = b.paragraph.rich_text.map((rt: any) => rt.plain_text).join('');
+                  break; // found the first paragraph
+                }
+              }
+            }
+          } catch(e) {
+            // gracefully skip if error
+          }
+        }
+      }
+    }
+    
+    return postsWithoutBody;
   } catch (error) {
     console.error("Failed to fetch Notion posts", error);
     return [];
@@ -188,7 +215,7 @@ const fetchNotionBlocksAsMarkdown = async (blockId: string): Promise<string> => 
 };
 
 export const getSinglePost = async (slug: string) => {
-  const posts = await getPublishedPosts();
+  const posts = await getPublishedPosts(false);
   const post = posts.find((p) => p.slug === slug);
   if (!post) return null;
 
