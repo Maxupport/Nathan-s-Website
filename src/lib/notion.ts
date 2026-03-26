@@ -1,12 +1,4 @@
-import { Client } from '@notionhq/client';
-import { NotionToMarkdown } from 'notion-to-md';
-
-const notion = new Client({
-  auth: process.env.NOTION_TOKEN,
-});
-
-const n2m = new NotionToMarkdown({ notionClient: notion });
-
+// Using native fetch to bypass Turbopack CJS Edge-runtime bundling bugs from the official Notion SDK
 export interface Post {
   id: string;
   slug: string;
@@ -93,16 +85,107 @@ export const getPublishedPosts = async (): Promise<Post[]> => {
   }
 };
 
+const parseRichText = (richTextArr: any[]) => {
+  if (!richTextArr) return '';
+  return richTextArr.map((rt) => {
+    let text = rt.plain_text;
+    if (rt.annotations) {
+      if (rt.annotations.bold) text = `**${text}**`;
+      if (rt.annotations.italic) text = `*${text}*`;
+      if (rt.annotations.strikethrough) text = `~~${text}~~`;
+      if (rt.annotations.code) text = `\`${text}\``;
+    }
+    if (rt.href) text = `[${text}](${rt.href})`;
+    return text;
+  }).join('');
+};
+
+const fetchNotionBlocksAsMarkdown = async (blockId: string): Promise<string> => {
+  const url = `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${process.env.NOTION_TOKEN}`,
+      'Notion-Version': '2022-06-28',
+    }
+  });
+
+  if (!response.ok) {
+    console.error('Failed to fetch Notion blocks', await response.text());
+    return '';
+  }
+
+  const data = await response.json();
+  const blocks = data.results || [];
+  let markdown = '';
+
+  for (const block of blocks) {
+    const type = block.type;
+    const content = block[type];
+    
+    switch (type) {
+      case 'paragraph':
+        markdown += `${parseRichText(content.rich_text)}\n\n`;
+        break;
+      case 'heading_1':
+        markdown += `# ${parseRichText(content.rich_text)}\n\n`;
+        break;
+      case 'heading_2':
+        markdown += `## ${parseRichText(content.rich_text)}\n\n`;
+        break;
+      case 'heading_3':
+        markdown += `### ${parseRichText(content.rich_text)}\n\n`;
+        break;
+      case 'bulleted_list_item':
+        markdown += `- ${parseRichText(content.rich_text)}\n`;
+        break;
+      case 'numbered_list_item':
+        markdown += `1. ${parseRichText(content.rich_text)}\n`;
+        break;
+      case 'to_do':
+        markdown += `- [${content.checked ? 'x' : ' '}] ${parseRichText(content.rich_text)}\n`;
+        break;
+      case 'toggle':
+        markdown += `<details><summary>${parseRichText(content.rich_text)}</summary>\n\n</details>\n\n`;
+        break;
+      case 'quote':
+        markdown += `> ${parseRichText(content.rich_text)}\n\n`;
+        break;
+      case 'code':
+        markdown += `\`\`\`${content.language || ''}\n${parseRichText(content.rich_text)}\n\`\`\`\n\n`;
+        break;
+      case 'divider':
+        markdown += `---\n\n`;
+        break;
+      case 'image':
+        const imgUrl = content.type === 'external' ? content.external.url : content.file.url;
+        const caption = parseRichText(content.caption) || '';
+        markdown += `![${caption}](${imgUrl})\n\n`;
+        break;
+      case 'callout':
+        const icon = content.icon?.emoji || '💡';
+        markdown += `> ${icon} ${parseRichText(content.rich_text)}\n\n`;
+        break;
+      case 'bookmark':
+        markdown += `[${content.url}](${content.url})\n\n`;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return markdown;
+};
+
 export const getSinglePost = async (slug: string) => {
   const posts = await getPublishedPosts();
   const post = posts.find((p) => p.slug === slug);
   if (!post) return null;
 
-  const mdBlocks = await n2m.pageToMarkdown(post.id);
-  const markdown = n2m.toMarkdownString(mdBlocks);
+  const markdown = await fetchNotionBlocksAsMarkdown(post.id);
   
   return {
     post,
-    markdown: markdown.parent || '',
+    markdown,
   };
 };
