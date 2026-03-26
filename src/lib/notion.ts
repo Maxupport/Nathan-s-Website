@@ -3,7 +3,9 @@ export interface Post {
   id: string;
   slug: string;
   title: string;
+  excerpt: string;
   status: string;
+
   tags: string[];
   cover: string;
   date: string;
@@ -72,6 +74,7 @@ export const getPublishedPosts = async (): Promise<Post[]> => {
         id: page.id,
         // Match user's setup based on the exact names they were told
         title: getPropertyText(p['標題'] || p.Title || p.Name),
+        excerpt: getPropertyText(p['文字'] || p['內文'] || p['簡介'] || p.Text || p.Excerpt || p.Description),
         slug: getPropertyText(p['短網址'] || p.Slug || p.URL),
         status: getPropertyText(p['發布狀態'] || p.Status),
         tags: getPropertyTags(p['#標籤'] || p.Tags || p['標籤']),

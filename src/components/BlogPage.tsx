@@ -85,7 +85,10 @@ export default function BlogPage({ posts }: { posts: Post[] }) {
                        ))}
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-4 line-clamp-2 leading-tight group-hover:text-sky-300 transition-colors">{post.title}</h3>
+                  <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 leading-tight group-hover:text-sky-300 transition-colors">{post.title}</h3>
+                  {post.excerpt && (
+                    <p className="text-slate-400 text-sm line-clamp-3 mb-4 leading-relaxed">{post.excerpt}</p>
+                  )}
                   <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between text-sm text-slate-500 group-hover:text-sky-400 transition-colors mt-auto">
                     <span>閱讀全文</span>
                     <ArrowRight size={16} />
