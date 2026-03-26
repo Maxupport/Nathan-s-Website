@@ -67,6 +67,7 @@ export const getPublishedPosts = async (withExcerpts = false): Promise<Post[]> =
       return [];
     }
 
+    const result = await response.json();
     let postsWithoutBody = result.results.map((page: any) => {
       const p = page.properties;
       return {
