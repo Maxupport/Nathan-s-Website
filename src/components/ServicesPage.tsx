@@ -1,8 +1,10 @@
 "use client";
 
+import FAQSection from './FAQSection';
+
 export default function ServicesPage() {
   return (
-    <div className="py-24 px-6 max-w-6xl mx-auto animate-in slide-in-from-bottom-8 duration-700 fade-in">
+    <div className="py-24 px-6 max-w-6xl mx-auto animate-in slide-in-from-bottom-8 duration-700 fade-in pb-32">
       <div className="text-center mb-20 relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[150px] bg-orange-500/10 blur-[100px] rounded-full point-events-none"></div>
         <h2 className="text-4xl font-extrabold text-white tracking-tight relative z-10 drop-shadow-lg mb-6">理性與溫暖並存的職涯支援</h2>
@@ -43,6 +45,8 @@ export default function ServicesPage() {
           <a href="https://docs.google.com/forms/d/e/1FAIpQLSfE2PNCwzEKaULuA2zq8eVipIf67CLHNPU2lXTfRqydZkr-NQ/viewform?usp=header" target="_blank" rel="noopener noreferrer" className="block text-center w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-semibold group-hover:bg-orange-500 group-hover:border-orange-500 transition-all duration-300 shadow-sm">立即體驗</a>
         </div>
       </div>
+
+      <FAQSection />
     </div>
   );
 }
