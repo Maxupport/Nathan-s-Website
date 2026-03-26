@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import BrandPage from '@/components/BrandPage';
 import ServicesPage from '@/components/ServicesPage';
@@ -11,6 +11,22 @@ import type { Post } from '@/lib/notion';
 
 export default function ClientHome({ posts }: { posts: Post[] }) {
   const [activeTab, setActiveTab] = useState('brand');
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1);
+      if (['brand', 'services', 'blog', 'reviews', 'contact'].includes(hash)) {
+        setActiveTab(hash);
+      }
+    };
+    
+    // Run on initial mount
+    handleHashChange();
+    
+    // Optional: listen for subsequent hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   return (
     <div className="font-sans antialiased text-slate-300">

@@ -41,7 +41,7 @@ export default async function BlogPostPage(props: any) {
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/#blog" className="text-slate-400 hover:text-white flex items-center transition-colors text-sm font-medium">
             <ArrowLeft size={16} className="mr-2" />
-            返回首頁
+            返回深度文章列表
           </Link>
           <div className="text-sm font-extrabold tracking-tighter text-white">Maxupport</div>
         </div>
