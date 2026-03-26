@@ -51,7 +51,7 @@ export default async function BlogPostPage(props: any) {
     notFound();
   }
 
-  const { post, markdown } = data;
+  const { post, markdown, nextPost } = data;
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.maxupport.com';
 
@@ -110,6 +110,26 @@ export default async function BlogPostPage(props: any) {
             {markdown}
           </ReactMarkdown>
         </article>
+
+        <div className="mt-24 pt-10 border-t border-white/10 flex flex-col md:flex-row gap-6 items-center justify-between">
+          {nextPost && (
+            <Link 
+              href={nextPost.slug.startsWith('http') ? nextPost.slug : `/blog/${nextPost.slug}`}
+              target={nextPost.slug.startsWith('http') ? "_blank" : undefined}
+              className="w-full md:w-1/2 text-left px-6 py-5 rounded-2xl bg-slate-900 border border-white/5 text-slate-300 hover:border-sky-500/30 transition-all shadow-xl hover:shadow-[0_10px_30px_rgba(14,165,233,0.1)] group"
+            >
+              <div className="text-xs text-slate-500 mb-1.5 font-medium tracking-wider">再讀一篇</div>
+              <div className="font-bold text-sky-400 group-hover:text-sky-300 transition-colors line-clamp-2">{nextPost.title}</div>
+            </Link>
+          )}
+          
+          <Link 
+            href="/#contact"
+            className="w-full md:w-auto text-center px-10 py-5 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-400 text-white font-bold hover:to-orange-500 transition-all shadow-[0_0_30px_rgba(249,115,22,0.3)] hover:shadow-[0_0_40px_rgba(249,115,22,0.5)] md:ml-auto shrink-0 text-lg"
+          >
+            與 Max 聊聊
+          </Link>
+        </div>
       </main>
       
       <div className="fixed inset-0 z-[-1] pointer-events-none">

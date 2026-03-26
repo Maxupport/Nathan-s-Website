@@ -249,8 +249,13 @@ export const getSinglePost = async (slug: string) => {
 
   const markdown = await fetchNotionBlocksAsMarkdown(post.id);
   
+  const currentIndex = posts.findIndex(p => p.id === post.id);
+  const nextPostData = posts[currentIndex + 1] || posts[0];
+  const nextPost = nextPostData ? { slug: nextPostData.slug, title: nextPostData.title } : null;
+  
   return {
     post,
     markdown,
+    nextPost,
   };
 };
