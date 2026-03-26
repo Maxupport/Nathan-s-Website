@@ -46,6 +46,7 @@ export const getPublishedPosts = async (withExcerpts = false): Promise<Post[]> =
         'Notion-Version': '2022-06-28',
         'Content-Type': 'application/json'
       },
+      next: { revalidate: 60 },
       body: JSON.stringify({
         filter: {
           property: '發布狀態',
@@ -91,7 +92,8 @@ export const getPublishedPosts = async (withExcerpts = false): Promise<Post[]> =
               headers: {
                 'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
                 'Notion-Version': '2022-06-28',
-              }
+              },
+              next: { revalidate: 60 }
             }).then(r => r.json());
             
             if (blocksRes.results) {
@@ -138,7 +140,8 @@ const fetchNotionBlocksAsMarkdown = async (blockId: string): Promise<string> => 
     headers: {
       Authorization: `Bearer ${process.env.NOTION_TOKEN}`,
       'Notion-Version': '2022-06-28',
-    }
+    },
+    next: { revalidate: 60 }
   });
 
   if (!response.ok) {
@@ -224,7 +227,9 @@ export const getSinglePost = async (slug: string) => {
     if (!p.slug) return false;
     const normalizedPostSlug = p.slug.trim().toLowerCase();
     // Match decoded straight or compare against encoded in case of weird Next.js routing bugs
-    return normalizedPostSlug === normalizedTargetSlug || encodeURIComponent(normalizedPostSlug) === normalizedTargetSlug;
+    return normalizedPostSlug === normalizedTargetSlug || 
+           encodeURIComponent(normalizedPostSlug) === normalizedTargetSlug ||
+           normalizedPostSlug.replace(/\s+/g, '') === normalizedTargetSlug.replace(/\s+/g, '');
   });
   
   if (!post) return null;
