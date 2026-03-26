@@ -19,9 +19,27 @@ export async function generateMetadata(props: any) {
   const data = await getSinglePost(params.slug);
   if (!data) return { title: 'Not Found' };
   
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.maxupport.com';
+  
   return {
     title: `${data.post.title} | Maxupport 深度文章`,
     description: `Maxupport 深度文章 - ${data.post.title}`,
+    openGraph: {
+      title: `${data.post.title} | Maxupport 深度文章`,
+      description: `Maxupport 深度文章 - ${data.post.title}`,
+      url: `${baseUrl}/blog/${params.slug}`,
+      type: 'article',
+      publishedTime: data.post.date,
+      authors: ['Max'],
+      tags: data.post.tags,
+      images: data.post.cover ? [data.post.cover] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${data.post.title} | Maxupport 深度文章`,
+      description: `Maxupport 深度文章 - ${data.post.title}`,
+      images: data.post.cover ? [data.post.cover] : [],
+    },
   };
 }
 
@@ -35,8 +53,29 @@ export default async function BlogPostPage(props: any) {
 
   const { post, markdown } = data;
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.maxupport.com';
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: {
+      '@type': 'Person',
+      name: 'Max',
+      url: 'https://www.instagram.com/maxupport/',
+    },
+    image: post.cover ? [post.cover] : [],
+    url: `${baseUrl}/blog/${params.slug}`,
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <nav className="border-b border-white/5 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/#blog" className="text-slate-400 hover:text-white flex items-center transition-colors text-sm font-medium">
@@ -59,9 +98,9 @@ export default async function BlogPostPage(props: any) {
             {post.title}
           </h1>
           {post.cover && (
-            <div className="w-full aspect-video rounded-3xl overflow-hidden border border-white/10 shadow-2xl mt-12 bg-slate-900">
+            <div className="w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl mt-12 bg-slate-900/50 flex justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.cover} alt={post.title} className="w-full h-full object-cover" />
+              <img src={post.cover} alt={post.title} className="max-w-full h-auto max-h-[70vh] object-contain rounded-3xl" />
             </div>
           )}
         </header>

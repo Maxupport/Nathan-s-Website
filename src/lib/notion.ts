@@ -217,7 +217,16 @@ const fetchNotionBlocksAsMarkdown = async (blockId: string): Promise<string> => 
 
 export const getSinglePost = async (slug: string) => {
   const posts = await getPublishedPosts(false);
-  const post = posts.find((p) => p.slug === slug);
+  
+  const normalizedTargetSlug = decodeURIComponent(slug).trim().toLowerCase();
+  
+  const post = posts.find((p) => {
+    if (!p.slug) return false;
+    const normalizedPostSlug = p.slug.trim().toLowerCase();
+    // Match decoded straight or compare against encoded in case of weird Next.js routing bugs
+    return normalizedPostSlug === normalizedTargetSlug || encodeURIComponent(normalizedPostSlug) === normalizedTargetSlug;
+  });
+  
   if (!post) return null;
 
   const markdown = await fetchNotionBlocksAsMarkdown(post.id);

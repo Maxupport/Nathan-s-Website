@@ -8,8 +8,35 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.maxupport.com'),
   title: "Maxupport | 生涯擺渡人 Max",
   description: "如果你現在處於「選擇很多卻無法下決定」、「一直想往前卻停滯不前」，Maxupport 擺渡服務將打開你對於未來的期待！",
+  openGraph: {
+    title: "Maxupport | 生涯擺渡人 Max",
+    description: "如果你現在處於「選擇很多卻無法下決定」、「一直想往前卻停滯不前」，Maxupport 擺渡服務將打開你對於未來的期待！",
+    url: '/',
+    siteName: 'Maxupport',
+    locale: 'zh_TW',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Maxupport | 生涯擺渡人 Max",
+    description: "如果你現在處於「選擇很多卻無法下決定」、「一直想往前卻停滯不前」，Maxupport 擺渡服務將打開你對於未來的期待！",
+  },
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Maxupport | 生涯擺渡人 Max',
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.maxupport.com',
+  description: '如果你現在處於「選擇很多卻無法下決定」、「一直想往前卻停滯不前」，Maxupport 擺渡服務將打開你對於未來的期待！',
+  author: {
+    '@type': 'Person',
+    name: 'Max',
+    url: 'https://www.instagram.com/maxupport/',
+  }
 };
 
 export default function RootLayout({
@@ -20,6 +47,10 @@ export default function RootLayout({
   return (
     <html lang="zh-TW" className="dark scroll-smooth">
       <body className={`${inter.className} bg-slate-950 text-slate-50 selection:bg-orange-500/30 selection:text-orange-100 antialiased min-h-screen overflow-x-hidden relative`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         {children}
       </body>
     </html>

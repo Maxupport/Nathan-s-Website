@@ -16,9 +16,10 @@ export default function BrandPage({ setActiveTab }: { setActiveTab: (tab: string
             你不是不夠努力，<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">只是在某些地方過度用力了</span>
           </h1>
-          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-            如果你現在處於「選擇很多卻無法下決定」、「一直想往前卻停滯不前」或是「找不到自己的優勢路線」的情況，Maxupport 擺渡服務將幫你梳理現在眼前的混亂，並打開你對於自己未來的期待！
-          </p>
+          <div className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-light space-y-6">
+            <p>這是一個提供線上職涯價值重估以及困境陪伴的一對一訪談服務，可以協助職場人梳理混亂、釐清方向的生涯/職涯擺渡（引導）服務，已服務超過 300+ 職場人重新審視職涯與人生。</p>
+            <p className="text-slate-300">如果你現在處於「選擇很多卻無法下決定」、「一直想往前卻停滯不前」或是「找不到自己的優勢路線」的情況，Maxupport 擺渡服務將幫你梳理現在眼前的混亂，並打開你對於自己未來的期待！</p>
+          </div>
           <button onClick={() => setActiveTab('contact')} className="group bg-orange-500 text-white px-8 py-4 rounded-full font-bold hover:bg-orange-400 transition-all duration-300 shadow-[0_0_30px_rgba(249,115,22,0.25)] hover:shadow-[0_0_40px_rgba(249,115,22,0.4)] hover:-translate-y-1 inline-flex items-center">
             預約 30 分鐘，把問題講清楚 <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
           </button>
