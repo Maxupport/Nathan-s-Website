@@ -221,15 +221,28 @@ const fetchNotionBlocksAsMarkdown = async (blockId: string): Promise<string> => 
 export const getSinglePost = async (slug: string) => {
   const posts = await getPublishedPosts(false);
   
-  const normalizedTargetSlug = decodeURIComponent(slug).trim().toLowerCase();
+  let targetSlug = slug;
+  try {
+    targetSlug = decodeURIComponent(slug);
+  } catch(e) {
+    console.warn("Could not decode slug:", slug);
+  }
+  
+  const normalizedTargetSlug = targetSlug.trim().toLowerCase().replace(/\s+/g, '');
   
   const post = posts.find((p) => {
     if (!p.slug) return false;
-    const normalizedPostSlug = p.slug.trim().toLowerCase();
-    // Match decoded straight or compare against encoded in case of weird Next.js routing bugs
-    return normalizedPostSlug === normalizedTargetSlug || 
-           encodeURIComponent(normalizedPostSlug) === normalizedTargetSlug ||
-           normalizedPostSlug.replace(/\s+/g, '') === normalizedTargetSlug.replace(/\s+/g, '');
+    const normalizedPostSlug = p.slug.trim().toLowerCase().replace(/\s+/g, '');
+    
+    // Direct matches
+    if (normalizedPostSlug === normalizedTargetSlug) return true;
+    if (encodeURIComponent(normalizedPostSlug) === normalizedTargetSlug) return true;
+    
+    // Length-safe substring matches (fallback for weird character encodings boundary issues)
+    if (normalizedTargetSlug.length >= 2 && normalizedPostSlug.includes(normalizedTargetSlug)) return true;
+    if (normalizedPostSlug.length >= 2 && normalizedTargetSlug.includes(normalizedPostSlug)) return true;
+    
+    return false;
   });
   
   if (!post) return null;
