@@ -78,10 +78,10 @@ export default async function BlogPostPage(props: any) {
       />
       <nav className="border-b border-white/5 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/#blog" className="text-slate-400 hover:text-white flex items-center transition-colors text-sm font-medium">
+          <a href="/#blog" className="text-slate-400 hover:text-white flex items-center transition-colors text-sm font-medium">
             <ArrowLeft size={16} className="mr-2" />
             返回深度文章列表
-          </Link>
+          </a>
           <div className="text-sm font-extrabold tracking-tighter text-white">Maxupport</div>
         </div>
       </nav>
@@ -123,12 +123,12 @@ export default async function BlogPostPage(props: any) {
             </Link>
           )}
           
-          <Link 
+          <a 
             href="/#contact"
             className="w-full md:w-auto text-center px-10 py-5 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-400 text-white font-bold hover:to-orange-500 transition-all shadow-[0_0_30px_rgba(249,115,22,0.3)] hover:shadow-[0_0_40px_rgba(249,115,22,0.5)] md:ml-auto shrink-0 text-lg"
           >
             與 Max 聊聊
-          </Link>
+          </a>
         </div>
       </main>
       
