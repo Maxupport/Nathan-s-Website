@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maxupport | 生涯擺渡人 Max</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <!-- Babel Standalone (for JSX in browser) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Import Map for ES Modules -->
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.292.0",
+        "papaparse": "https://esm.sh/papaparse@5.4.1"
+      }
+    }
+    </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #020617;
+      color: #f8fafc;
+    }
+
+    /* Premium custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #020617;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-50 selection:bg-orange-500/30 selection:text-orange-100 antialiased">
+  <div id="root"></div>
+
+  <!-- React App Logic -->
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useRef } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import Papa from 'papaparse';
+    import {
+      Mail, Calendar, ChevronRight, CheckCircle2, XCircle,
+      MessageSquare, FileText, ArrowRight, Star, Quote,
+      UserCircle, Linkedin, Instagram, Facebook, MessageCircle
+    } from 'lucide-react';
+
+    const MaxSite = () => {
+      const [activeTab, setActiveTab] = useState('brand');
+
+      // 自動緩滾功能已停用
+
+      const initialReviews = [
+        { id: 1, name: "陳小姐", tag: "28歲 / 行銷企劃", stars: 5, comment: "原本對職涯方向很模糊，跟 Max 聊完 30 分鐘後，他幫我把雜亂的選項拆解得很清楚，終於知道下一步該往哪裡走。推薦給同樣卡住的人！", date: "2024-05-15" },
+        { id: 2, name: "林先生", tag: "32歲 / 工程師", stars: 5, comment: "服務雖然理性，但能感受到 Max 的溫暖。履歷優化服務非常專業，把我的經驗翻譯成企業聽得懂的語言，面試機會明顯變多了。", date: "2024-05-10" },
+        { id: 3, name: "張先生", tag: "25歲 / 社會新鮮人", stars: 4, comment: "$99 的 Email 診斷雖然短，但一針見血地指出我情緒卡住的原因。是一個性價比極高的心靈修復入門票。", date: "2024-05-01" },
+      ];
+
+      const [reviews, setReviews] = useState(initialReviews);
+      const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+
+      // ⚠️ 請在此處填入你 Google Sheet 發佈為 CSV 的連結 (這是【使用者好評】的專屬連結)
+      const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ07qkSZZf7assEOvLdlzkmM8ylFmaFP38jnqaNjajvFH4vr-5b2GwJY1XmoUwMcuIq6ak5PU3XavqZ/pub?output=csv";
+
+      useEffect(() => {
+        if (!GOOGLE_SHEETS_CSV_URL) {
+          setIsLoadingReviews(false);
+          return;
+        }
+        fetch(GOOGLE_SHEETS_CSV_URL)
+          .then(res => res.text())
+          .then(csvText => {
+            const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+            const approvedReviews = parsed.data
+              .filter(row => {
+                const appKey = Object.keys(row).find(k => k.toLowerCase().includes('approved') || k.includes('核准')) || 'Approved';
+                const val = String(row[appKey] || '').trim().toLowerCase();
+                return val === 'true' || val === 'yes' || val === '是' || val === 'v' || val === 'y';
+              })
+              .map((row, index) => {
+                const keys = Object.keys(row);
+                const nameKey = keys.find(k => k.toLowerCase().includes('name') || k.includes('名稱')) || keys[1];
+                const tagKey = keys.find(k => k.toLowerCase().includes('tag') || k.includes('標籤')) || keys[2];
+                const commentKey = keys.find(k => k.toLowerCase().includes('comment') || k.includes('評價')) || keys[3];
+                const starsKey = keys.find(k => k.toLowerCase().includes('star') || k.includes('星')) || keys[4];
+
+                return {
+                  id: `gs-${index}`,
+                  name: row[nameKey] || '匿名訪客',
+                  tag: row[tagKey] || '使用者',
+                  stars: parseInt(row[starsKey]) || 5,
+                  comment: row[commentKey] || '',
+                  date: row['時間戳記'] || row.Date || new Date().toISOString().split('T')[0]
+                };
+              })
+              .reverse();
+            if (approvedReviews.length > 0) {
+              setReviews(approvedReviews);
+            }
+            setIsLoadingReviews(false);
+          })
+          .catch(err => {
+            console.error("載入評論失敗:", err);
+            setIsLoadingReviews(false);
+          });
+      }, []);
+
+      // 導覽列組件 (深色版)
+      const Navbar = () => (
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/5">
+          <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div className="flex items-center space-x-2 relative group cursor-pointer" onClick={() => { setActiveTab('brand'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+              <div className="absolute -inset-2 bg-orange-500/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition duration-500"></div>
+              <span className="text-xl font-extrabold tracking-tighter text-white relative z-10">Maxupport</span>
+              <span className="text-sm text-slate-500 font-light relative z-10 hidden sm:inline-block">| 生涯擺渡人 Max</span>
+            </div>
+            <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-400">
+              {[
+                { id: 'brand', label: '品牌簡介' },
+                { id: 'services', label: '服務說明' },
+                { id: 'blog', label: '深度文章' },
+                { id: 'reviews', label: '使用者好評' },
+              ].map(tab => (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`hover:text-orange-400 transition-colors duration-300 relative ${activeTab === tab.id ? 'text-orange-400' : ''}`}>
+                  {tab.label}
+                  {activeTab === tab.id && <span className="absolute -bottom-5 left-0 right-0 h-0.5 bg-orange-500 rounded-t-full shadow-[0_0_10px_rgba(249,115,22,0.8)]"></span>}
+                </button>
+              ))}
+              <button onClick={() => setActiveTab('contact')} className={`bg-white text-slate-950 px-5 py-2.5 rounded-full hover:bg-slate-200 transition-all duration-300 text-xs flex items-center shadow-lg hover:shadow-xl ${activeTab === 'contact' ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-slate-950' : ''}`}>
+                <MessageSquare size={14} className="mr-1.5" /> 聯絡 Max
+              </button>
+            </div>
+          </div>
+        </nav>
+      );
+
+      // 1. 品牌簡介頁面
+      const BrandPage = () => (
+        <div className="animate-in fade-in duration-700 pb-20">
+          {/* Hero Section */}
+          <section className="py-32 px-6 text-center relative overflow-hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/10 blur-[120px] rounded-full point-events-none"></div>
+            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-blue-500/5 blur-[100px] rounded-full point-events-none"></div>
+
+            <div className="relative z-10">
+              <span className="inline-block py-1 px-3 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-semibold tracking-widest mb-6">MAXUPPORT</span>
+              <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight max-w-4xl mx-auto tracking-tight drop-shadow-sm">
+                你不是不夠努力，<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">只是在某些地方過度用力了</span>
+              </h1>
+              <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+                如果你現在處於「選擇很多卻無法下決定」、「一直想往前卻停滯不前」或是「找不到自己的優勢路線」的情況，Maxupport 擺渡服務將幫你梳理現在眼前的混亂，並打開你對於自己未來的期待！
+              </p>
+              <button onClick={() => setActiveTab('contact')} className="group bg-orange-500 text-white px-8 py-4 rounded-full font-bold hover:bg-orange-400 transition-all duration-300 shadow-[0_0_30px_rgba(249,115,22,0.25)] hover:shadow-[0_0_40px_rgba(249,115,22,0.4)] hover:-translate-y-1 inline-flex items-center">
+                預約 30 分鐘，把問題講清楚 <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
+              </button>
+            </div>
+          </section>
+
+          {/* Philosophy Section */}
+          <section className="py-20 px-6 max-w-5xl mx-auto relative z-10">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">「生涯擺渡」能解決的核心問題</h2>
+                  <p className="text-slate-400 font-light leading-relaxed text-lg">
+                    我無法教你怎麼立即成功，但我可以引導你找出梳理眼前的混亂的關鍵步驟與方向，讓改變開始發生。
+                  </p>
+                </div>
+                <div className="space-y-4 bg-slate-900/50 p-8 rounded-3xl border border-white/5 backdrop-blur-md shadow-2xl">
+                  {[
+                    { t: "問題講清楚", d: "不要一直想，而是學會多角度檢視" },
+                    { t: "選項攤開", d: "客觀為選項評分，讓「決定」變簡單" },
+                    { t: "下一步定出來", d: "在不確定的情況下仍敢於行動" },
+                  ].map(item => (
+                    <div key={item.t} className="flex items-start space-x-4">
+                      <div className="bg-emerald-500/10 p-1.5 rounded-full shrink-0">
+                        <CheckCircle2 className="text-emerald-400" size={18} />
+                      </div>
+                      <div className="mt-1"><span className="font-semibold text-slate-200">{item.t}：</span><span className="text-slate-500 font-light">{item.d}</span></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 text-white p-10 rounded-[2rem] relative overflow-hidden group shadow-2xl">
+                <Quote className="absolute -bottom-6 -right-6 text-orange-500/10 group-hover:text-orange-500/20 group-hover:scale-110 transition duration-700" size={180} strokeWidth={1} />
+                <h3 className="text-2xl font-bold mb-8 relative z-10 text-white tracking-tight">不適合所有人</h3>
+                <div className="space-y-5 relative z-10 text-base font-light text-slate-300 mb-10">
+                  {[
+                    { type: "X", t: "快速且確定會成功的方法" },
+                    { type: "X", t: "一套照做就會贏的標準程序 (SOP)" },
+                    { type: "X", t: "有人直接告訴你標準答案" },
+                  ].map(item => (
+                    <div key={item.t} className="flex items-center space-x-3">
+                      <XCircle className="text-rose-400 shrink-0" size={20} />
+                      <span className="text-slate-400">想要 <span className="text-slate-200 font-medium">{item.t}</span></span>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 relative z-10 backdrop-blur-sm">
+                  <p className="text-orange-300 font-medium text-sm leading-relaxed">如果你卡住但講不清楚、缺資訊缺判斷框架...那這裡會對你有用。</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Profile Section (Placeholder) */}
+          <section className="py-20 px-6 max-w-5xl mx-auto relative z-10">
+            <div className="bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-[2rem] p-10 md:p-14 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-l from-orange-500/5 to-transparent pointer-events-none"></div>
+              <div className="flex flex-col items-center max-w-3xl mx-auto relative z-10">
+                {/* Photo Placeholder */}
+                <div className="flex justify-center relative mb-12">
+                  <div className="absolute inset-0 bg-orange-500/10 blur-3xl rounded-full scale-110 group-hover:scale-125 transition-transform duration-700"></div>
+                  <div className="w-56 h-56 md:w-72 md:h-72 rounded-full bg-slate-900/80 backdrop-blur-sm border-4 border-slate-800 shadow-2xl flex flex-col items-center justify-center group-hover:border-orange-500/30 transition-colors duration-500 overflow-hidden relative z-10">
+                    <img src="https://lh3.googleusercontent.com/d/1CCyFkbZ1UTYiQzrXS6HdJtrfH_zV03vk" alt="Max 個人照" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  </div>
+                </div>
+                {/* Text Placeholder */}
+                <div className="space-y-6 text-center w-full">
+                  <h2 className="text-3xl font-bold text-white tracking-tight">我是 Max，生涯擺渡人</h2>
+                  <div className="w-12 h-1 bg-orange-500/50 rounded-full mx-auto"></div>
+                  <div className="text-slate-300 font-light leading-relaxed space-y-5 text-[15px] text-left mt-8 inline-block max-w-2xl px-4 md:px-0">
+                    <p className="text-lg font-medium text-slate-200">從 2022 年起協助超過 300+ 職場人重新審視職涯與人生，始終相信每個人都能擁有專屬於自己的榮耀時刻！</p>
+                    <p>有些人，是在一切都準備好之後才往前走；<br />也有一些人，是在還不確定的時候，選擇繼續相信。</p>
+                    <p>白天，我在風險投資基金看趨勢、在天使投資俱樂部淘選創辦人，評估從太空到生活的各類項目；這些評估說來專業但其實無非就是「識人」的延伸 — 看一個人，能不能在混亂與不確定中，撐住自己想走的方向。</p>
+                    <p>這些年，我看過很多聰明、努力、條件很好的人。<br />他們不是做不到，而是太早開始懷疑自己。</p>
+                    <p>透過文字、對話與陪伴，去理解那些「看起來都很好，卻過得不太快樂」的時刻，也試著陪一個人，在現實裡找到繼續走下去的方式。</p>
+                    <div className="bg-orange-500/10 border border-orange-500/20 p-5 rounded-xl relative group-hover:shadow-[0_0_20px_rgba(249,115,22,0.1)] transition-all duration-500">
+                      <p className="font-semibold text-orange-400 mb-2">我做的事情很簡單——</p>
+                      <p className="text-orange-200/90 text-[15px]">就是在你快要放棄選擇之前，陪你把最關鍵的那一步，再想清楚一點。</p>
+                    </div>
+                    <p className="pt-4 text-slate-500 font-medium text-center">我是 Max，我是在現實裡持續尋找理想的人。</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      );
+
+      // 2. 服務說明頁面
+      const ServicesPage = () => (
+        <div className="py-24 px-6 max-w-6xl mx-auto animate-in slide-in-from-bottom-8 duration-700 fade-in">
+          <div className="text-center mb-20 relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[150px] bg-orange-500/10 blur-[100px] rounded-full point-events-none"></div>
+            <h2 className="text-4xl font-extrabold text-white tracking-tight relative z-10 drop-shadow-lg mb-6">理性與溫暖並存的職涯支援</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto font-light leading-relaxed text-lg relative z-10">
+              （您可以在這裡補充服務初衷。例如：為什麼您會設計這些服務？您的核心觀點是什麼？或者是您希望帶給每個來諮詢的人什麼樣的轉變與價值...）
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 items-stretch relative z-10">
+            {/* S1: $99 */}
+            <div className="border border-white/10 rounded-[2rem] p-8 flex flex-col group bg-slate-900/40 backdrop-blur-md hover:bg-slate-900/80 hover:border-orange-500/30 transition-all duration-500 shadow-xl hover:shadow-orange-500/10">
+              <div className="mb-8"><span className="bg-white/5 text-slate-300 border border-white/10 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">Email 限時回覆</span></div>
+              <h3 className="text-2xl font-bold text-white mb-4">正能量傳輸服務</h3>
+              <p className="text-slate-400 text-sm mb-8 leading-relaxed font-light grow">
+                有時候卡住，只是因為你撐太久了。幫你情緒整理成可理解脈絡，並提供一個立刻採取的小行動。快速修復「重新上線」。
+              </p>
+              <p className="text-3xl font-black text-orange-400 mb-8">$99 <span className="text-sm text-slate-600 font-normal">/ 次</span></p>
+              <a href="mailto:maxupport@gmail.com?subject=%E3%80%90%E6%AD%A3%E8%83%BD%E9%87%8F%E5%82%B3%E8%BC%B8%E6%9C%8D%E5%8B%99%E3%80%91%E6%88%91%E9%9C%80%E8%A6%81%E5%B9%AB%E5%BF%99%E8%A3%9C%E5%85%85%E6%AD%A3%E8%83%BD%E9%87%8F%EF%BC%81&body=Hi%20Max%EF%BC%8C%0A%0A%E6%88%91%E6%9C%80%E8%BF%91%E9%81%87%E5%88%B0%E4%BA%86%E4%B8%80%E4%BA%9B%E7%8B%80%E6%B3%81%EF%BC%8C%E9%9C%80%E8%A6%81%E8%A3%9C%E5%85%85%E6%AD%A3%E8%83%BD%E9%87%8F%EF%BC%8C%E6%88%91%E7%8F%BE%E5%9C%A8%E7%9A%84%E7%8B%80%E6%B3%81%E6%98%AF%E4%B8%8B%E9%9D%A2%E9%80%99%E6%A8%A3%EF%BC%9A%0A%0A1.%20%E6%88%91%E6%98%AF%E8%AA%B0%EF%BC%9F%0A(%E6%96%B9%E4%BE%BF%E7%A8%B1%E5%91%BC%E4%BD%A0%E7%9A%84%E6%96%B9%E5%BC%8F%E9%83%BD%E5%8F%AF%E4%BB%A5%EF%BC%8C%E4%B8%8D%E9%99%90%E6%96%BC%E6%9C%AC%E5%90%8D%EF%BC%9B%E8%8B%A5%E5%B8%8C%E6%9C%9B%E6%88%91%E6%9B%B4%E6%B7%B1%E5%85%A5%E5%8D%94%E5%8A%A9%EF%BC%8C%E5%8F%AF%E4%BB%A5%E6%8F%90%E4%BE%9B%E7%A4%BE%E4%BA%A4%E5%B9%B3%E5%8F%B0%E5%B8%B3%E8%99%9F%E7%B5%A6%E6%88%91%EF%BC%8C%E8%AE%93%E6%88%91%E8%83%BD%E6%9B%B4%E4%BA%86%E8%A7%A3%E4%BD%A0%E4%B8%80%E9%BB%9E%E3%80%82)%0A%0A2.%20%E4%BB%A5%E4%B8%8B%E6%98%AF%E6%88%91%E7%9B%AE%E5%89%8D%E7%9A%84%E6%83%85%E6%B3%81%EF%BC%9A%0A%EF%BC%88%E8%AB%8B%E7%B0%A1%E5%96%AE%E6%8F%8F%E8%BF%B0%E4%BD%A0%E7%8F%BE%E5%9C%A8%E9%81%87%E5%88%B0%E7%9A%84%E7%8B%80%E6%B3%81%E6%88%96%E5%8D%A1%E4%BD%8F%E7%9A%84%E5%9C%B0%E6%96%B9%EF%BC%89%0A%0A3.%20%E5%B8%8C%E6%9C%9B%E5%BE%97%E5%88%B0%E6%80%8E%E9%BA%BC%E6%A8%A3%E7%9A%84%E9%BC%93%E5%8B%B5%E8%88%87%E5%8F%8D%E9%A5%8B%EF%BC%9F%0A(%E4%B9%9F%E5%8F%AF%E4%BB%A5%E8%AE%93%E6%88%91%E8%87%AA%E7%94%B1%E7%99%BC%E6%8F%AE%EF%BC%8C%E7%9C%8B%E4%BD%A0~~)%0A%0AAll%20the%20best%2C" className="block text-center w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-semibold group-hover:bg-orange-500 group-hover:border-orange-500 transition-all duration-300 shadow-sm">正能量補充</a>
+            </div>
+            {/* S2: $999 (Most Popular) */}
+            <div className="border border-orange-500/50 rounded-[2rem] p-8 flex flex-col relative bg-gradient-to-b from-slate-800 to-slate-900 md:-translate-y-4 shadow-[0_0_40px_rgba(249,115,22,0.15)] group hover:shadow-[0_0_60px_rgba(249,115,22,0.25)] transition-all duration-500">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-400 to-orange-600 text-white px-6 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-orange-500/30">1 對 1 深度諮詢</div>
+              <div className="mb-6 mt-2"><span className="opacity-0 px-4 py-1.5 rounded-full text-xs">Spacer</span></div>
+              <h3 className="text-2xl font-bold text-white mb-4">職涯重新定位服務</h3>
+              <p className="text-slate-300 text-sm mb-8 leading-relaxed font-light grow">
+                問題不在選項，而在你沒有清楚的判斷框架。幫你建立「你自己的選擇系統」，提供可行路徑與風險分析。
+              </p>
+              <p className="text-3xl font-black text-orange-400 mb-8">$999 <span className="text-sm text-slate-500 font-normal">/ 專案</span></p>
+              <a href="https://docs.google.com/forms/d/e/1FAIpQLSfE2PNCwzEKaULuA2zq8eVipIf67CLHNPU2lXTfRqydZkr-NQ/viewform?usp=header" target="_blank" rel="noopener noreferrer" className="block text-center w-full py-3.5 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-400 transition-all duration-300 shadow-[0_0_20px_rgba(249,115,22,0.3)]">建立框架</a>
+            </div>
+            {/* S3: $999 */}
+            <div className="border border-white/10 rounded-[2rem] p-8 flex flex-col group bg-slate-900/40 backdrop-blur-md hover:bg-slate-900/80 hover:border-orange-500/30 transition-all duration-500 shadow-xl hover:shadow-orange-500/10">
+              <div className="mb-8"><span className="bg-white/5 text-slate-300 border border-white/10 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">職涯價值重估</span></div>
+              <h3 className="text-2xl font-bold text-white mb-4">履歷優化 ＋ 模擬面試</h3>
+              <p className="text-slate-400 text-sm mb-8 leading-relaxed font-light grow">
+                多數人投履歷沒回音，是因為價值沒被正確呈現。重建你的職涯邏輯，翻譯成「市場看得懂的人才語言」。
+              </p>
+              <p className="text-3xl font-black text-orange-400 mb-8">$999 <span className="text-sm text-slate-600 font-normal">/ 專案</span></p>
+              <a href="https://docs.google.com/forms/d/e/1FAIpQLSfE2PNCwzEKaULuA2zq8eVipIf67CLHNPU2lXTfRqydZkr-NQ/viewform?usp=header" target="_blank" rel="noopener noreferrer" className="block text-center w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-semibold group-hover:bg-orange-500 group-hover:border-orange-500 transition-all duration-300 shadow-sm">立即體驗</a>
+            </div>
+          </div>
+        </div>
+      );
+
+      // 2.5 深度文章頁面 (方格子 RSS)
+      const BlogPage = () => {
+        const [posts, setPosts] = useState([]);
+        const [isLoading, setIsLoading] = useState(true);
+
+        // ⚠️ 請填入你「文章總表」 Google Sheet 發佈為 CSV 的連結（同好評區塊的做法）
+        const GOOGLE_SHEETS_BLOG_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTmJ3uqQyKCOjB8nbevL17iZ5KBNIk4_W7Xq3M8uAZMIjzBCBV0EH1Qvwh2oHmkVTt-WjrjXFvcV9-3/pub?output=csv';
+
+        useEffect(() => {
+          if (!GOOGLE_SHEETS_BLOG_CSV_URL) {
+            setIsLoading(false);
+            return;
+          }
+          fetch(GOOGLE_SHEETS_BLOG_CSV_URL)
+            .then(res => res.text())
+            .then(csvText => {
+              const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+              const approvedPosts = parsed.data
+                .filter(row => {
+                  const appKey = Object.keys(row).find(k => k.toLowerCase().includes('approved') || k.includes('核准') || k.includes('上架') || k.includes('顯示')) || 'Approved';
+                  const val = String(row[appKey] || '').trim().toLowerCase();
+                  return val === 'true' || val === 'yes' || val === '是' || val === 'v' || val === 'y';
+                })
+                .map((row, index) => {
+                  const keys = Object.keys(row);
+                  const titleKey = keys.find(k => k.toLowerCase().includes('title') || k.includes('標題')) || keys[1];
+                  const coverKey = keys.find(k => k.toLowerCase().includes('image') || k.toLowerCase().includes('cover') || k.includes('縮圖') || k.includes('圖片') || k.includes('封面')) || keys[2];
+                  const descKey = keys.find(k => k.toLowerCase().includes('desc') || k.includes('摘要') || k.includes('說明') || k.includes('內容')) || keys[3];
+                  const linkKey = keys.find(k => k !== coverKey && (k.toLowerCase().includes('link') || k.toLowerCase().includes('url') || k.includes('網址') || k.includes('連結'))) || keys[4];
+                  const dateKey = keys.find(k => k.toLowerCase().includes('date') || k.includes('日期') || k.includes('時間')) || keys[0];
+
+                  const getImageUrl = (url) => {
+                    if (!url) return '';
+                    const gdriveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                    if (gdriveMatch && gdriveMatch[1]) {
+                      return `https://lh3.googleusercontent.com/d/${gdriveMatch[1]}`;
+                    }
+                    return url;
+                  };
+
+                  return {
+                    id: `bp-${index}`,
+                    title: row[titleKey] || '未命名的文章',
+                    thumbnail: getImageUrl(row[coverKey]),
+                    description: row[descKey] || '',
+                    link: row[linkKey] || '#',
+                    pubDate: row[dateKey] || new Date().toISOString().split('T')[0]
+                  };
+                })
+                .reverse();
+
+              if (approvedPosts.length > 0) {
+                setPosts(approvedPosts);
+              }
+              setIsLoading(false);
+            })
+            .catch(err => {
+              console.error("載入文章失敗:", err);
+              setIsLoading(false);
+            });
+        }, []);
+
+        const stripHtml = (html) => {
+          let tmp = document.createElement("DIV");
+          tmp.innerHTML = html;
+          return tmp.textContent || tmp.innerText || "";
+        };
+
+        return (
+          <div className="py-24 px-6 max-w-6xl mx-auto animate-in fade-in duration-700 pb-32">
+            <div className="text-center mb-20 relative">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[100px] bg-sky-500/20 blur-[80px] rounded-full point-events-none"></div>
+              <h2 className="text-4xl font-extrabold text-white mb-6 relative z-10 tracking-tight">深度文章與觀點</h2>
+              <p className="text-slate-400 max-w-xl mx-auto font-light leading-relaxed text-lg relative z-10">從混亂到清晰、從分散到收斂，用文字記錄對職場及人生的看法與觀點。</p>
+              {/* <div className="mt-8 relative z-10">
+                <a href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm font-semibold text-sky-400 hover:text-sky-300 bg-sky-500/10 px-6 py-2.5 rounded-full border border-sky-500/20 transition-colors">
+                  前往部落格閱讀更多 <ChevronRight size={16} className="ml-1" />
+                </a>
+              </div> */}
+            </div>
+
+            {isLoading ? (
+              <div className="text-center py-20 text-slate-500">正在同步最新文章...</div>
+            ) : posts.length === 0 ? (
+              <div className="text-center py-20 text-slate-500">
+                目前還沒有上架任何深度文章。<br />
+                <span className="text-xs mt-2 block">（系統提示：請準備一個 Google 表單與 Sheet，並將發布為 CSV 的連結貼進程式碼中的 GOOGLE_SHEETS_BLOG_CSV_URL）</span>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
+                {posts.map((post, i) => (
+                  <a key={i} href={post.link} target="_blank" rel="noopener noreferrer" className="bg-slate-900/60 rounded-[2rem] border border-white/5 overflow-hidden group hover:border-sky-500/30 transition-all duration-500 shadow-xl hover:-translate-y-2 hover:shadow-[0_10px_40px_rgba(14,165,233,0.15)] flex flex-col">
+                    <div className="h-48 bg-slate-800 relative overflow-hidden shrink-0">
+                      {post.thumbnail ? (
+                        <img src={post.thumbnail} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-sky-900 to-slate-900 flex items-center justify-center">
+                          <FileText size={40} className="text-sky-500/20" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500"></div>
+                    </div>
+                    <div className="p-8 flex flex-col grow">
+                      <div className="text-xs font-mono text-sky-400 mb-3 tracking-wider">{post.pubDate ? post.pubDate.split(' ')[0] : ''}</div>
+                      <h3 className="text-xl font-bold text-white mb-4 line-clamp-2 leading-tight group-hover:text-sky-300 transition-colors">{post.title}</h3>
+                      <p className="text-slate-400 font-light text-sm line-clamp-3 leading-relaxed grow">
+                        {stripHtml(post.description)}
+                      </p>
+                      <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between text-sm text-slate-500 group-hover:text-sky-400 transition-colors">
+                        <span>閱讀全文</span>
+                        <ArrowRight size={16} />
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      // 3. 使用者好評頁面
+      const ReviewsPage = () => {
+        const renderStars = (count) => (
+          <div className="flex space-x-1 text-orange-400 drop-shadow-[0_0_5px_rgba(249,115,22,0.5)]">
+            {[...Array(5)].map((_, i) => <Star key={i} size={16} fill={i < count ? "currentColor" : "none"} className={i < count ? "" : "text-slate-700"} />)}
+          </div>
+        );
+
+        return (
+          <div className="py-24 px-6 max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-700 pb-32">
+            <div className="text-center mb-20 relative">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[100px] bg-blue-500/10 blur-[80px] rounded-full point-events-none"></div>
+              <h2 className="text-4xl font-extrabold text-white mb-6 relative z-10 tracking-tight">真實反饋，理性見證</h2>
+              <p className="text-slate-400 max-w-xl mx-auto font-light leading-relaxed text-lg relative z-10 mb-8">聽聽那些曾經卡住迷惘的朋友，在經過拆解與擺渡後，獲得什麼樣的清醒與改變。</p>
+
+              {/* Google Form Placeholder Link */}
+              <div className="relative z-10 mt-8">
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLSfRVbwj7eGSvieK4X3t1X8feP9hr2FQQTUydL3P9JSZ6P9vvA/viewform?usp=header" target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-8 py-3.5 rounded-full font-semibold transition-all duration-300 backdrop-blur-md inline-flex items-center shadow-lg hover:shadow-xl">
+                  撰寫你的真實評價 <ChevronRight className="ml-2" size={18} />
+                </a>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24 relative z-10">
+              {isLoadingReviews ? (
+                <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-12 text-slate-400">正在載入最新評價...</div>
+              ) : reviews.map(review => (
+                <div key={review.id} className="bg-slate-900/60 p-8 rounded-[2rem] border border-white/5 backdrop-blur-sm shadow-xl relative hover:shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:-translate-y-1 transition-all duration-500 group overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10 transition-all duration-500 group-hover:bg-orange-500/10"></div>
+                  <Quote className="absolute top-8 right-8 text-white/5 group-hover:text-orange-500/10 transition-colors duration-500" size={40} strokeWidth={1} />
+                  <div className="flex items-center space-x-4 mb-6 relative z-10">
+                    <div className="p-2 bg-slate-800 rounded-full border border-white/10">
+                      <UserCircle className="text-slate-400" size={32} strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-100 text-base">{review.name}</p>
+                      <p className="text-xs text-slate-500 font-light tracking-wide mt-0.5">{review.tag}</p>
+                    </div>
+                  </div>
+                  <div className="mb-4 relative z-10">{renderStars(review.stars)}</div>
+                  <p className="text-slate-300 text-sm leading-loose font-light min-h-[120px] relative z-10">{review.comment}</p>
+                  <p className="text-xs text-slate-600 mt-6 pt-5 border-t border-white/10 font-mono tracking-wider relative z-10">{review.date}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      // 4. 聯絡我頁面
+      const ContactPage = () => (
+        <div className="py-24 px-6 max-w-6xl mx-auto animate-in zoom-in-95 duration-700">
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-12 mb-16 relative z-10">
+            {/* 左側: 主要轉換日曆預約 (Accent 卡片) */}
+            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-white/10 text-white p-10 rounded-[2rem] relative overflow-hidden group shadow-2xl">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-orange-600 opacity-50"></div>
+              <div className="absolute -bottom-10 -right-10 text-orange-500/5 group-hover:text-orange-500/10 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700"><Calendar size={220} strokeWidth={1} /></div>
+              <div className="relative z-10 h-full flex flex-col">
+                <div className="w-14 h-14 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-center mb-8 backdrop-blur-sm">
+                  <Calendar className="text-orange-400" size={28} />
+                </div>
+                <h2 className="text-3xl font-extrabold mb-4 tracking-tight">線上聊聊 / 專業傾聽 / 經驗分享</h2>
+                <p className="text-slate-400 mb-10 leading-relaxed font-light text-base max-w-sm grow">
+                  不用特別準備好，也不用什麼都要自己先想清楚，你只需要帶著你最在意的事情與真正的自己過來，剩下的，讓我們一起聊聊、一起把它梳理＆彙整出來！
+                </p>
+                <a href="https://calendar.app.google/Vr5jfcaB2aAD35rN9" target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-orange-400 font-semibold hover:text-orange-300 transition-colors text-sm py-3 px-6 bg-orange-500/10 rounded-xl border border-orange-500/20 hover:bg-orange-500/20 w-max group/btn">
+                  前往 Google 日曆預約 <ArrowRight className="ml-2 group-hover/btn:translate-x-1 transition-transform" size={16} />
+                </a>
+              </div>
+            </div>
+
+            {/* 右側: 知識領取與AI (Glassmorphism 卡片) */}
+            <div className="bg-slate-900/60 backdrop-blur-md border border-white/10 p-10 rounded-[2rem] shadow-xl relative">
+              <div className="w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-8">
+                <Mail className="text-blue-400" size={28} />
+              </div>
+              <h2 className="text-3xl font-extrabold text-white mb-4 tracking-tight">訂閱「每週一信」</h2>
+              <p className="text-slate-400 mb-8 text-sm leading-relaxed font-light">
+                訂閱後可 <span className="text-slate-200 font-medium">立即領取【職場覺醒指引】PDF</span>，並獲得 <span className="text-slate-200 font-medium">Max AI 數位雙生</span> 24h 社群提問權限。
+              </p>
+              <form action="https://docs.google.com/forms/u/0/d/e/1FAIpQLScjPUif6r1y_82PTK5rKjYFK7Qjt6dWf_p3U2UG19O7gS8pVw/formResponse" method="POST" target="hidden_iframe" onSubmit={() => { setTimeout(() => { alert('🚀 訂閱成功！請至信箱收取您的專屬 PDF 與社群連結。'); }, 500); }} className="space-y-4">
+                <input type="email" name="entry.952220156" required placeholder="你的 Email 地址 (例如：maxupport@gmail.com)" className="w-full px-5 py-4 rounded-xl bg-slate-950/50 border border-white/10 text-white placeholder-slate-600 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 focus:outline-none text-sm transition-all" />
+                <button type="submit" className="w-full py-4 bg-white text-slate-950 rounded-xl font-bold hover:bg-slate-200 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all duration-300 text-sm">
+                  免費領取覺醒指引與 AI 社群權限
+                </button>
+              </form>
+              {/* 隱藏的 iframe：為了讓防跳轉提交後不換頁 */}
+              <iframe name="hidden_iframe" id="hidden_iframe" style={{ display: 'none' }}></iframe>
+              <div className="mt-8 flex items-center space-x-3 text-xs text-slate-300 bg-slate-800/50 border border-white/5 p-4 rounded-xl backdrop-blur-sm">
+                <MessageSquare size={16} className="text-blue-400 shrink-0" />
+                <span className="font-light">已有 <span className="text-white font-medium">300+</span> 位職場迷惘人士在 AI 社群中持續學習</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 社群連結區域 */}
+          <div className="bg-slate-900/40 rounded-[2rem] p-10 border border-white/5 shadow-lg relative overflow-hidden group col-span-1 md:col-span-2 mt-8">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-orange-500/5 to-blue-500/5 opacity-50 blur-3xl point-events-none"></div>
+            <div className="absolute top-10 right-10 text-white/5 opacity-50 group-hover:scale-110 transition-transform duration-1000"><Linkedin size={100} strokeWidth={1} /></div>
+            <div className="relative z-10">
+              <div className="mb-10 max-w-xl">
+                <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">其他社群聯絡管道</h3>
+                <p className="text-sm text-slate-400 leading-relaxed font-light">除上述主要管道外，你也可以透過社群追蹤 Max 的最新職場觀點或是直接私訊我。</p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {[
+                  { icon: Linkedin, label: 'LinkedIn', d: '專業定位連結', link: 'https://www.linkedin.com/in/max-tung-342b86ba/', style: 'hover:bg-sky-500/10 hover:border-sky-500/30 hover:shadow-[0_0_20px_rgba(14,165,233,0.15)] group/social hover:text-sky-400' },
+                  { icon: Instagram, label: 'Instagram', d: '職涯導引文章', link: 'https://www.instagram.com/maxupport/', style: 'hover:bg-pink-500/10 hover:border-pink-500/30 hover:shadow-[0_0_20px_rgba(236,72,153,0.15)] group/social hover:text-pink-400' },
+                  { icon: Facebook, label: 'Facebook', d: '追蹤最新動態', link: 'https://docs.google.com/forms/d/e/1FAIpQLSfbRWr5TB6ZvA3djtR-oIZyeaJN5zPm6ncjgB32_TeJWGeCMw/viewform', style: 'hover:bg-blue-600/10 hover:border-blue-600/30 hover:shadow-[0_0_20px_rgba(37,99,235,0.15)] group/social hover:text-blue-500' },
+                ].map(social => (
+                  <a key={social.label} href={social.link} target="_blank" rel="noopener noreferrer" className={`bg-slate-900/80 p-6 rounded-2xl border border-white/5 flex flex-col items-start space-y-4 transition-all duration-300 ${social.style}`}>
+                    <div className="p-3 bg-slate-800 rounded-xl group-hover/social:bg-transparent group-hover/social:text-current transition-colors text-slate-300">
+                      <social.icon className="w-7 h-7" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-200 text-sm group-hover/social:text-current transition-colors">{social.label}</p>
+                      <p className="text-xs text-slate-500 font-light mt-1.5 tracking-wider">{social.d}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="min-h-screen font-sans antialiased text-slate-300 selection:bg-orange-500/30 selection:text-orange-100 overflow-x-hidden relative">
+          <Navbar />
+          <main className="pt-16 pb-16 relative z-10 w-full overflow-x-hidden">
+            {activeTab === 'brand' && <BrandPage />}
+            {activeTab === 'services' && <ServicesPage />}
+            {activeTab === 'blog' && <BlogPage />}
+            {activeTab === 'reviews' && <ReviewsPage />}
+            {activeTab === 'contact' && <ContactPage />}
+          </main>
+          {/* Global Gradient Backgrounds */}
+          <div className="fixed inset-0 z-0 pointer-events-none">
+            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-500/5 blur-[150px] rounded-full"></div>
+            <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-orange-500/5 blur-[150px] rounded-full"></div>
+          </div>
+          <footer className="py-12 border-t border-white/5 text-center text-slate-500 text-xs bg-slate-950/80 backdrop-blur-md relative z-20 px-6">
+            <div className="max-w-xl mx-auto space-y-3">
+              <p className="font-medium text-slate-400 text-sm">Maxupport @ 生涯擺渡人 Max</p>
+              <p className="font-light leading-relaxed">如果你也正處於卡住但講不清楚卡在哪的狀態，帶上你的混亂，讓我們一起在其中找到再出發的可能。</p>
+              <p className="font-mono tracking-wider pt-4 opacity-50">© 2022. All rights reserved.</p>
+            </div>
+          </footer>
+        </div>
+      );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<MaxSite />);
+  </script>
+</body>
+
+</html>

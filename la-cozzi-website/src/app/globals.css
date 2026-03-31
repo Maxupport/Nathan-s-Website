@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: var(--font-m-plus), var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-m-plus), ui-serif, Georgia, serif;
+  --font-marker: var(--font-m-plus), cursive;
+}
+
+@utility rounded-organic {
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+}
+
+@utility rounded-organic-2 {
+  border-radius: 15px 225px 15px 255px/255px 15px 225px 15px;
+}
+
+@utility rounded-organic-3 {
+  border-radius: 225px 15px 255px 15px/15px 255px 15px 225px;
+}
+
+@layer base {
+  /* Premium custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0c0a09; /* stone-950 */
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #292524; /* stone-800 */
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #44403c; /* stone-700 */
+  }
+}

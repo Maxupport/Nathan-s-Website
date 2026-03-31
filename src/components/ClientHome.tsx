@@ -10,13 +10,18 @@ import ContactPage from '@/components/ContactPage';
 import type { Post } from '@/lib/notion';
 
 export default function ClientHome({ posts }: { posts: Post[] }) {
-  const [activeTab, setActiveTab] = useState('brand');
+  const [activeTab, setActiveTabState] = useState('brand');
+
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    window.history.pushState(null, '', `#${tab}`);
+  };
 
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.substring(1);
       if (['brand', 'services', 'blog', 'reviews', 'contact'].includes(hash)) {
-        setActiveTab(hash);
+        setActiveTabState(hash);
       }
     };
     
