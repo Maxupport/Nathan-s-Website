@@ -14,16 +14,16 @@ interface Review {
 }
 
 const initialReviews: Review[] = [
-  { id: 1, name: "[客戶名稱佔位符]", tag: "[活動類型佔位符] 婚禮晚宴", stars: 5, comment: "[評論內容佔位符] 謝謝 la Cozzi 帶給我們這麼完美的夜晚，音樂的挑選跟主唱的嗓音都讓人感到非常溫暖。親友們都給了很高的評價！", date: "2026-05-20" },
-  { id: 2, name: "[客戶名稱佔位符]", tag: "[活動類型佔位符] 品牌發表會", stars: 5, comment: "[評論內容佔位符] 合作過程溝通十分順暢，樂團非常能理解我們品牌想傳遞的氛圍，音樂的鋪陳恰到好處。", date: "2026-06-15" },
+  { id: 1, name: "匿名客戶", tag: "婚禮晚宴", stars: 5, comment: "謝謝 La Cozzi 帶給我們這麼完美的夜晚，音樂的挑選跟主唱的嗓音都讓人感到非常溫暖。親友們都給了很高的評價！", date: "2026-05-20" },
+  { id: 2, name: "匿名品牌", tag: "品牌發表會", stars: 5, comment: "合作過程溝通十分順暢，樂團非常能理解我們品牌想傳遞的氛圍，音樂的鋪陳恰到好處。", date: "2026-06-15" },
 ];
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
-  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
 
-  // Placeholder for the new Google Sheets CSV URL
-  const GOOGLE_SHEETS_CSV_URL = ""; 
+  // Google Sheets CSV URL
+  const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRWTU_Hds5s1QcYG_UWtWiPfjZn2h1IWBWMb1N96Lpfq_X99lYDuXhYVS1-g-d0xsPiU-fZ-xB7sWFw/pub?output=csv"; 
 
   useEffect(() => {
     if (!GOOGLE_SHEETS_CSV_URL) {
@@ -42,10 +42,10 @@ export default function ReviewsPage() {
           })
           .map((row, index) => {
             const ObjectKeys = Object.keys(row);
-            const nameKey = ObjectKeys.find(k => k.toLowerCase().includes('name') || k.includes('名稱')) || ObjectKeys[1];
-            const tagKey = ObjectKeys.find(k => k.toLowerCase().includes('tag') || k.includes('標籤')) || ObjectKeys[2];
-            const commentKey = ObjectKeys.find(k => k.toLowerCase().includes('comment') || k.includes('評價')) || ObjectKeys[3];
-            const starsKey = ObjectKeys.find(k => k.toLowerCase().includes('star') || k.includes('星')) || ObjectKeys[4];
+            const nameKey = ObjectKeys.find(k => k.toLowerCase().includes('name') || k.includes('名稱') || k.includes('稱呼')) || ObjectKeys[1];
+            const tagKey = ObjectKeys.find(k => k.toLowerCase().includes('tag') || k.includes('標籤') || k.includes('場合') || k.includes('活動')) || ObjectKeys[2];
+            const commentKey = ObjectKeys.find(k => k.toLowerCase().includes('comment') || k.includes('評價') || k.includes('說的話') || k.includes('回饋')) || ObjectKeys[3];
+            const starsKey = ObjectKeys.find(k => k.toLowerCase().includes('star') || k.includes('星') || k.includes('滿意')) || ObjectKeys[4];
 
             return {
               id: `gs-${index}`,
@@ -79,22 +79,38 @@ export default function ReviewsPage() {
       <div className="text-center mb-20 relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[100px] bg-rose-500/10 blur-[80px] rounded-full point-events-none"></div>
         <h2 className="text-4xl font-black font-serif text-stone-100 mb-6 relative z-10 tracking-tight">
-          [標題佔位符] 聽見感動的迴響
+          聽見感動的迴響
         </h2>
         <p className="text-stone-300 max-w-xl mx-auto font-light leading-relaxed text-lg relative z-10 mb-8">
-          [副標題佔位符] 每一次演出後收到最真實的回饋，都是我們繼續用音樂創造溫度的動力。
+          每一次演出後收到最真實的回饋，都是我們繼續用音樂創造溫度的最強動力。
         </p>
 
         <div className="relative z-10 mt-8">
-          <a href="#" className="bg-stone-800 hover:bg-amber-600 border-2 border-stone-600 hover:border-amber-400 text-stone-100 px-8 py-3.5 rounded-organic font-black font-serif transition-all duration-300 backdrop-blur-md inline-flex items-center shadow-lg hover:shadow-[0_10px_20px_rgba(217,119,6,0.3)] group">
-            [評價連結佔位符] 留下您的寶貴評價 <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" size={18} />
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSerGqoYFd-FAbMJgOSn6j43VyCGGEoV7mqj4sng2G6coxfTdA/viewform" target="_blank" rel="noopener noreferrer" className="bg-stone-800 hover:bg-amber-600 border-2 border-stone-600 hover:border-amber-400 text-stone-100 px-8 py-3.5 rounded-organic font-black font-serif transition-all duration-300 backdrop-blur-md inline-flex items-center shadow-lg hover:shadow-[0_10px_20px_rgba(217,119,6,0.3)] group">
+            分享您的美好體驗 <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" size={18} />
           </a>
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24 relative z-10">
         {isLoadingReviews ? (
-          <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-12 text-stone-500">正在載入最新評價...</div>
+          [...Array(6)].map((_, idx) => (
+            <div key={`skeleton-${idx}`} className="bg-stone-900/60 p-8 rounded-organic border-2 border-stone-800/50 backdrop-blur-sm animate-pulse min-h-[300px] flex flex-col">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-stone-800 rounded-organic-2 border-2 border-stone-700/50"></div>
+                <div className="space-y-2">
+                  <div className="h-4 w-24 bg-stone-800 rounded"></div>
+                  <div className="h-3 w-16 bg-stone-800/50 rounded"></div>
+                </div>
+              </div>
+              <div className="h-4 w-24 bg-stone-800/50 rounded mb-4"></div>
+              <div className="space-y-3 grow">
+                <div className="h-3 w-full bg-stone-800/30 rounded"></div>
+                <div className="h-3 w-full bg-stone-800/30 rounded"></div>
+                <div className="h-3 w-3/4 bg-stone-800/30 rounded"></div>
+              </div>
+            </div>
+          ))
         ) : reviews.map(review => (
           <div key={review.id} className="bg-stone-900/60 p-8 rounded-organic border-2 border-stone-800 backdrop-blur-sm shadow-[0_15px_40px_-15px_rgba(0,0,0,0.5)] relative hover:shadow-[0_20px_50px_-15px_rgba(245,158,11,0.15)] hover:border-amber-500/40 hover:-translate-y-1 transition-all duration-500 group overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-10 -mt-10 transition-all duration-500 group-hover:bg-amber-500/10"></div>

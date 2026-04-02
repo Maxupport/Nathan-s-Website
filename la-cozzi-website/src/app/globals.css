@@ -2,9 +2,9 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --font-sans: var(--font-m-plus), var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-m-plus), ui-serif, Georgia, serif;
-  --font-marker: var(--font-m-plus), cursive;
+  --font-sans: var(--font-noto-sans-tc), var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif-tc), ui-serif, Georgia, serif;
+  --font-marker: var(--font-noto-serif-tc), cursive;
 }
 
 @utility rounded-organic {

@@ -7,9 +7,9 @@ import BrandPage from '@/components/BrandPage';
 import PartnersPage from '@/components/PartnersPage';
 import BlogPage from '@/components/BlogPage';
 import ReviewsPage from '@/components/ReviewsPage';
-import type { Post } from '@/lib/notion';
+import type { Post, Partner } from '@/lib/notion';
 
-export default function ClientHome({ posts }: { posts: Post[] }) {
+export default function ClientHome({ posts, partners }: { posts: Post[], partners: Partner[] }) {
   const [activeTab, setActiveTab] = useState('landing');
 
   useEffect(() => {
@@ -28,13 +28,18 @@ export default function ClientHome({ posts }: { posts: Post[] }) {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  // 當切換分頁時，自動將畫面捲動回最上方，避免殘留上一個頁面的捲動距離
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab]);
+
   return (
     <div className="font-sans antialiased text-stone-300">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="pt-16 pb-16 relative z-10 w-full overflow-x-hidden min-h-[calc(100vh-140px)]">
         {activeTab === 'landing' && <LandingPage />}
         {activeTab === 'brand' && <BrandPage setActiveTab={setActiveTab} />}
-        {activeTab === 'partners' && <PartnersPage />}
+        {activeTab === 'partners' && <PartnersPage partners={partners} />}
         {activeTab === 'blog' && <BlogPage posts={posts} />}
         {activeTab === 'reviews' && <ReviewsPage />}
       </main>
@@ -47,9 +52,9 @@ export default function ClientHome({ posts }: { posts: Post[] }) {
 
       <footer className="py-12 border-t border-white/5 text-center text-stone-500 text-xs bg-stone-950/80 backdrop-blur-md relative z-20 px-6">
         <div className="max-w-xl mx-auto space-y-3">
-          <p className="font-medium text-stone-400 text-sm">la Cozzi 拉釦子樂團</p>
+          <p className="font-medium text-stone-400 text-sm">La Cozzi 拉釦子樂團</p>
           <p className="font-light leading-relaxed">音樂不只是聽覺的饗宴，更重要的是拉近人與人之間距離的溫度。期待在下一個重要的時刻與您相遇。</p>
-          <p className="font-mono tracking-wider pt-4 opacity-50">© 2026 la Cozzi. All rights reserved.</p>
+          <p className="font-mono tracking-wider pt-4 opacity-50">© 2026 La Cozzi. All rights reserved.</p>
         </div>
       </footer>
     </div>

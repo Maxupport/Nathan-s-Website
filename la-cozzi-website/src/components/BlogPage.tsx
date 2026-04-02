@@ -20,10 +20,10 @@ export default function BlogPage({ posts }: { posts: Post[] }) {
       <div className="text-center mb-16 relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[100px] bg-amber-500/20 blur-[80px] rounded-full point-events-none"></div>
         <h2 className="text-4xl font-black font-serif text-stone-100 mb-6 relative z-10 tracking-tight">
-          [專欄標題佔位符] 演出花絮與專欄
+          深度文章
         </h2>
         <p className="text-stone-300 max-w-xl mx-auto font-light leading-relaxed text-lg relative z-10">
-          [副標題佔位符] 紀錄每一場演出的感動、婚禮的幕後故事，以及我們對音樂的觀察與堅持。
+          紀錄每一場演出的感動、婚禮背後的幕後故事，以及我們對音樂的觀察與堅持。
         </p>
       </div>
 
@@ -48,9 +48,11 @@ export default function BlogPage({ posts }: { posts: Post[] }) {
       )}
 
       {posts.length === 0 ? (
-        <div className="text-center py-20 text-stone-500 relative z-10 bg-stone-900/40 rounded-organic border-2 border-stone-800 p-8 shadow-inner">
-          <p className="text-lg font-bold">[佔位符] 目前還沒有上架文章。未來這裡將會呈現從 Notion 同步的花絮與專欄。</p>
-          <span className="text-xs mt-4 block text-amber-500/70 font-mono">（系統提示：請準備新的 Notion Database ID 來串接）</span>
+        <div className="text-center py-24 text-stone-400 relative z-10 bg-stone-900/40 rounded-organic border-2 border-stone-800 p-8 shadow-inner max-w-2xl mx-auto">
+          <FileText size={48} className="mx-auto text-stone-600 mb-6 opacity-50" />
+          <p className="text-xl font-bold font-serif text-stone-200 mb-2">精彩文章正在醞釀中... ☕</p>
+          <p className="font-light text-sm text-stone-400">目前主唱大人正在用心籌備與整理過往的演出花絮，敬請期待！</p>
+          <span className="text-xs mt-6 block text-stone-600 font-mono opacity-50">（管理員提示：如果已在 Notion 寫好文章，請確認發布狀態欄位已設為「Published」）</span>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">

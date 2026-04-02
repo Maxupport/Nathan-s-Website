@@ -12,6 +12,15 @@ export interface Post {
   youtubeUrl?: string;
 }
 
+export interface Partner {
+  id: string;
+  name: string;
+  role: string;
+  description: string[];
+  photo: string;
+  content?: string;
+}
+
 const getPropertyText = (prop: any): string => {
   if (!prop) return '';
   if (prop.type === 'title') return prop.title.map((t: any) => t.plain_text).join('');
@@ -52,7 +61,7 @@ export const getPublishedPosts = async (withExcerpts = false): Promise<Post[]> =
         filter: {
           property: '發布狀態',
           select: {
-            equals: 'Published'
+            equals: 'published'
           }
         },
         sorts: [
@@ -136,24 +145,41 @@ const parseRichText = (richTextArr: any[]) => {
 };
 
 const fetchNotionBlocksAsMarkdown = async (blockId: string): Promise<string> => {
-  const url = `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${process.env.NOTION_TOKEN}`,
-      'Notion-Version': '2022-06-28',
-    },
-    next: { revalidate: 60 }
-  });
+  let blocks: any[] = [];
+  let cursor: string | undefined = undefined;
+  let hasMore = true;
 
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error('Failed to fetch Notion blocks', errText);
-    return `> ⚠️ **無法讀取文章內容** \n> 請確認此文章是否存在於您的 Notion 資料庫中。`;
+  while (hasMore) {
+    const url = new URL(`https://api.notion.com/v1/blocks/${blockId}/children`);
+    url.searchParams.append('page_size', '100');
+    if (cursor) {
+      url.searchParams.append('start_cursor', cursor);
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${process.env.NOTION_TOKEN}`,
+        'Notion-Version': '2022-06-28',
+      },
+      next: { revalidate: 60 }
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Failed to fetch Notion blocks', errText);
+      if (blocks.length === 0) {
+        return `> ⚠️ **無法讀取文章內容** \n> 請確認此文章是否存在於您的 Notion 資料庫中。`;
+      }
+      break;
+    }
+
+    const data = await response.json();
+    blocks = [...blocks, ...(data.results || [])];
+    
+    hasMore = data.has_more;
+    cursor = data.next_cursor;
   }
-
-  const data = await response.json();
-  const blocks = data.results || [];
   
   if (blocks.length === 0) {
     return `*目前作者正在撰寫這篇文章的正文，敬請期待！*`;
@@ -277,4 +303,71 @@ export const getSinglePost = async (slug: string) => {
     markdown,
     nextPost,
   };
+};
+
+export const getPartners = async (): Promise<Partner[]> => {
+  const databaseId = process.env.NOTION_PARTNERS_DATABASE_ID;
+  if (!databaseId) return [];
+
+  try {
+    const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
+        'Notion-Version': '2022-06-28',
+        'Content-Type': 'application/json'
+      },
+      next: { revalidate: 10 },
+      body: JSON.stringify({
+        filter: {
+          property: '發布狀態',
+          select: {
+            equals: 'published'
+          }
+        },
+        sorts: [
+          {
+            property: '排序',
+            direction: 'ascending'
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Notion API Error (Partners):', await response.text());
+      return [];
+    }
+
+    const data = await response.json();
+
+    const parsedResults = await Promise.all(data.results.map(async (page: any) => {
+      const name = getPropertyText(page.properties['Name']);
+      const role = getPropertyText(page.properties['Role']);
+      
+      let description: string[] = [];
+      const descProp = page.properties['簡介'];
+      if (descProp && descProp.type === 'multi_select') {
+        description = getPropertyTags(descProp);
+      } else {
+        description = getPropertyText(descProp).split('\n').map((s: string) => s.trim()).filter(Boolean);
+      }
+
+      const photo = getPropertyCover(page.properties['Photo']);
+      const content = await fetchNotionBlocksAsMarkdown(page.id);
+
+      return {
+        id: page.id,
+        name,
+        role,
+        description,
+        photo,
+        content
+      };
+    }));
+    return parsedResults.filter((p: any) => p.name); // 過濾掉空名字的項目
+  } catch (error) {
+    console.error('Error fetching partners:', error);
+    return [];
+  }
 };
