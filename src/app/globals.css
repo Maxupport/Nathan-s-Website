@@ -2,6 +2,16 @@
 @plugin "@tailwindcss/typography";
 
 @layer base {
+  /* Prevent orphans (single words/characters on a new line) */
+  body {
+    text-wrap: pretty;
+  }
+  
+  /* Balance headings for better visual harmony */
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+  }
+
   /* Premium custom scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
