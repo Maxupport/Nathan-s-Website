@@ -52,7 +52,7 @@ export default function LandingPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-amber-500/10 blur-[100px] rounded-full point-events-none"></div>
         <Music className="w-16 h-16 text-amber-500/40 mx-auto mb-6 relative z-10" />
         <h1 className="text-4xl md:text-5xl font-extrabold text-stone-100 tracking-tight relative z-10 drop-shadow-md mb-4 font-serif">
-          <span className="sr-only">La Cozzi 拉釦子樂團 | </span>專屬您的音樂演出報價
+          <span className="sr-only">La Cozzi 拉釦子樂團 | </span>您專屬的演出報價
         </h1>
         <p className="text-stone-300 font-light leading-relaxed text-lg max-w-xl mx-auto relative z-10">
           選擇您的活動類型並留下 Email，系統將會立即將對應的報價單與詳細說明內容發送給您。
