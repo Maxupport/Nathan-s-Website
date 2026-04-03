@@ -44,7 +44,7 @@ export default function BrandPage({ setActiveTab }: { setActiveTab: (tab: string
         </div>
 
         <h2 className="text-2xl md:text-3xl font-black font-serif text-stone-100 text-center mb-12 tracking-tight">我們的三大特色</h2>
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             { 
               icon: <Mic2 className="text-amber-400" size={32} />, 
@@ -93,7 +93,7 @@ export default function BrandPage({ setActiveTab }: { setActiveTab: (tab: string
       {/* 4. 我們能為你的現場帶來什麼 */}
       <section className="py-20 px-6 max-w-5xl mx-auto relative z-10">
         <h2 className="text-3xl font-black font-serif text-stone-100 text-center mb-16 tracking-tight">我們能為你的現場帶來什麼</h2>
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {[
             { t: "讓現場更有質感，而不是更吵雜", d: "我們不追求喧鬧與炫技，而是讓音樂自然融入現場，成為氣氛的一部分。無論是婚禮、品牌活動、開幕、餐敘或商務場合，都能讓整體感受更完整、更細緻，也更耐人回味。" },
             { t: "讓現場有溫度，不只有制式流程", d: "重要場合不是靠節目堆疊就能成立，而是需要被好好照顧的節奏與情緒。我們用真實演奏回應當下的氣氛，讓每一段音樂都不是單純播放出來的背景，而是真正陪著現場一起呼吸、一起流動的存在。" },
@@ -111,7 +111,7 @@ export default function BrandPage({ setActiveTab }: { setActiveTab: (tab: string
       </section>
 
       {/* 5. 為什麼多人選 & 適合這樣的你們 */}
-      <section className="py-20 px-6 max-w-5xl mx-auto relative z-10 grid md:grid-cols-2 gap-16">
+      <section className="py-20 px-6 max-w-5xl mx-auto relative z-10 grid lg:grid-cols-2 gap-12 lg:gap-16">
         {/* Why */}
         <div className="space-y-6 bg-stone-900/40 p-8 rounded-3xl border border-stone-800/60 shadow-lg relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -ml-10 -mt-10 group-hover:bg-amber-500/10 transition-colors"></div>

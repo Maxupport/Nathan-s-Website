@@ -67,7 +67,7 @@ export default function LandingPage() {
           {/* 報價類型選擇 (Radio Buttons) */}
           <div className="space-y-4">
             <label className="block text-stone-200 text-sm font-semibold mb-2">請選擇您需要的報價類型：</label>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               <label className={`cursor-pointer border-2 p-4 text-center transition-all duration-300 ${quoteType === 'wedding' ? 'bg-amber-500/10 border-amber-500/50 rounded-organic shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-stone-950/50 border-stone-800 rounded-organic hover:border-amber-500/30 text-stone-400'}`}>
                 <input type="radio" name="quote_type" value="wedding" className="hidden" checked={quoteType === 'wedding'} onChange={() => setQuoteType('wedding')} disabled={status === 'loading'} />
                 <span className={`font-medium ${quoteType === 'wedding' ? 'text-amber-300' : 'text-stone-400'}`}>婚禮演出報價</span>
@@ -109,7 +109,7 @@ export default function LandingPage() {
         <h2 className="text-2xl font-black font-serif text-stone-100 mb-3 tracking-tight relative z-10">其他社群聯絡管道</h2>
         <p className="text-stone-400 font-light text-sm mb-10 relative z-10">除上述主要報價管道外，您也可以透過社群關注 La Cozzi 的最新動態，或是直接私訊我們。</p>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
           {/* Email / 專案詢問 */}
           <a href="mailto:lacozzi@gmail.com" className="bg-stone-950/60 border-2 border-stone-800 hover:border-amber-500/60 p-6 rounded-organic transition-all duration-300 hover:-translate-y-1 group/card flex flex-col justify-center items-start">
             <div className="bg-stone-800/80 p-3 rounded-organic-2 mb-4 group-hover/card:bg-amber-500/20 group-hover/card:text-amber-400 text-stone-400 transition-colors">

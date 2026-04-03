@@ -37,4 +37,15 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #44403c; /* stone-700 */
   }
+
+  /* Global typography fixes for Chinese text */
+  h1, h2, h3, h4, h5, h6, button, a, label {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  p, li, span, div {
+    text-wrap: pretty;
+  }
 }
