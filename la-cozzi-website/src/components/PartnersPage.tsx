@@ -21,9 +21,9 @@ export default function PartnersPage({ partners }: { partners: Partner[] }) {
       </div>
 
       {/* 卡片式排版設計：一排兩個 */}
-      <div className="grid md:grid-cols-2 gap-8 items-stretch relative z-10">
+      <div className="grid lg:grid-cols-2 gap-8 items-stretch relative z-10">
         {partners.map(partner => (
-          <div key={partner.id} className="border-2 border-amber-500/30 rounded-organic p-8 flex flex-col sm:flex-row gap-8 items-center sm:items-center group bg-stone-900/40 backdrop-blur-md hover:bg-stone-900/80 hover:border-amber-500/60 transition-all duration-500 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.5)] hover:-translate-y-1 hover:shadow-amber-500/10 relative overflow-hidden">
+          <div key={partner.id} className="border-2 border-amber-500/30 rounded-organic p-6 md:p-8 flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-6 md:gap-8 items-center group bg-stone-900/40 backdrop-blur-md hover:bg-stone-900/80 hover:border-amber-500/60 transition-all duration-500 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.5)] hover:-translate-y-1 hover:shadow-amber-500/10 relative overflow-hidden">
             <div className="absolute -right-10 -bottom-10 bg-amber-500/5 w-40 h-40 rounded-full blur-3xl group-hover:bg-amber-500/10 transition-colors duration-1000 point-events-none"></div>
             {/* 照片區域 */}
             <div className="flex-shrink-0 self-center flex items-center justify-center relative group-hover:-translate-y-2 transition-transform duration-500">
