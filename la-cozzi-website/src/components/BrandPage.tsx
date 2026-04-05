@@ -1,8 +1,9 @@
 "use client";
 
 import { CheckCircle2, Music, Heart, Mic2, HeartHandshake, Smile, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 
-export default function BrandPage({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
+export default function BrandPage() {
   return (
     <div className="animate-in fade-in duration-700 pb-20">
       
@@ -13,6 +14,7 @@ export default function BrandPage({ setActiveTab }: { setActiveTab: (tab: string
         
         <div className="relative z-10">
           <div className="flex justify-center mb-8 relative z-10 w-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src="/logo.png" 
               alt="La Cozzi 樂團 Logo" 
@@ -97,7 +99,7 @@ export default function BrandPage({ setActiveTab }: { setActiveTab: (tab: string
           {[
             { t: "讓現場更有質感，而不是更吵雜", d: "我們不追求喧鬧與炫技，而是讓音樂自然融入現場，成為氣氛的一部分。無論是婚禮、品牌活動、開幕、餐敘或商務場合，都能讓整體感受更完整、更細緻，也更耐人回味。" },
             { t: "讓現場有溫度，不只有制式流程", d: "重要場合不是靠節目堆疊就能成立，而是需要被好好照顧的節奏與情緒。我們用真實演奏回應當下的氣氛，讓每一段音樂都不是單純播放出來的背景，而是真正陪著現場一起呼吸、一起流動的存在。" },
-            { t: "讓你放心把音樂這件事交出去", d: "活動當天已經有太多事情需要顧，音樂不該再成為額外壓力。La Cozzi 會以前期溝通、曲風安排與現場分寸感，幫你把氣氛穩穩撐住，讓你把心力留給真正重要的人與時刻。" }
+            { t: "讓你放心把音樂這件事交出去", d: "活動當天已經有太多事情與顧，音樂不該再成為額外壓力。La Cozzi 會以前期溝通、曲風安排與現場分寸感，幫你把氣氛穩穩撐住，讓你把心力留給真正重要的人與時刻。" }
           ].map((item, idx) => (
              <div key={idx} className="flex flex-col space-y-3">
                 <div className="flex items-center space-x-3 mb-2">
@@ -146,7 +148,7 @@ export default function BrandPage({ setActiveTab }: { setActiveTab: (tab: string
               "喜歡真實演奏的溫度，不喜歡罐頭式伴奏感",
               "在意現場氣氛，也在意賓客的整體感受",
               "想要音樂幫活動加分，但不想讓表演搶走焦點",
-              "希望合作團隊穩定可靠，能理解場合與應對進退的分寸"
+              "希望合作團隊穩定可靠，能理解場合與應對進進的分寸"
             ].map((text, i) => (
               <li key={i} className="flex items-center space-x-3 bg-stone-800/30 p-4 rounded-xl border border-stone-700/30 hover:border-amber-500/30 transition-colors">
                 <CheckCircle2 size={20} className="text-emerald-500/80 shrink-0" />
@@ -171,7 +173,7 @@ export default function BrandPage({ setActiveTab }: { setActiveTab: (tab: string
             <div className="bg-stone-900/50 p-6 rounded-2xl border border-stone-800 relative group overflow-hidden shadow-lg hover:shadow-amber-500/10 transition-shadow">
               <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl transition-all duration-500 group-hover:bg-amber-500/10"></div>
               <h4 className="font-bold text-amber-400 text-xl font-serif tracking-wide mb-2">Cozy</h4>
-              <p className="text-sm text-stone-300/80 mb-2 font-medium">代表舒服、溫暖、放鬆。</p>
+              <p className="text-sm text-stone-300/80 mb-2 font-medium">代表舒服、溫慢、放鬆。</p>
               <p className="text-[14px]">這是我們希望帶給現場的感受：不壓迫、不匠氣，而是讓每一個人都能自在地沉浸其中。</p>
             </div>
             
@@ -204,9 +206,9 @@ export default function BrandPage({ setActiveTab }: { setActiveTab: (tab: string
           <a href="https://ig.me/m/lacozzi_1314" target="_blank" rel="noopener noreferrer" className="inline-block text-center w-full sm:w-auto bg-amber-600 text-stone-50 px-8 py-4 rounded-organic-2 font-black font-serif border-2 border-amber-500 hover:bg-amber-500 transition-all duration-300 shadow-[0_0_30px_rgba(217,119,6,0.3)] hover:shadow-[0_0_40px_rgba(217,119,6,0.5)] hover:-translate-y-1">
             立即洽詢演出檔期
           </a>
-          <button onClick={() => setActiveTab('landing')} className="w-full sm:w-auto bg-stone-800 text-stone-200 px-8 py-4 rounded-organic-2 font-black font-serif border-2 border-stone-700 hover:border-amber-500/50 hover:bg-stone-800/80 transition-all duration-300 hover:-translate-y-1 shadow-lg">
+          <Link href="/" className="w-full sm:w-auto bg-stone-800 text-stone-200 px-8 py-4 rounded-organic-2 font-black font-serif border-2 border-stone-700 hover:border-amber-500/50 hover:bg-stone-800/80 transition-all duration-300 hover:-translate-y-1 shadow-lg text-center flex items-center justify-center">
             索取演出方案報價
-          </button>
+          </Link>
         </div>
         <div className="mt-8 relative z-10">
           <a href="https://ig.me/m/lacozzi_1314" target="_blank" rel="noopener noreferrer" className="inline-block text-rose-400 hover:text-rose-300 font-semibold tracking-wide underline underline-offset-8 decoration-rose-500/30 hover:decoration-rose-400 transition-colors">

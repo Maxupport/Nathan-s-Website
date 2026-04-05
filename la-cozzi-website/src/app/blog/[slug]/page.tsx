@@ -78,7 +78,7 @@ export default async function BlogPostPage(props: any) {
       />
       <nav className="border-b border-stone-800 bg-stone-950/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/#blog" className="text-stone-400 hover:text-amber-400 flex items-center transition-colors text-sm font-medium">
+          <Link href="/blog" className="text-stone-400 hover:text-amber-400 flex items-center transition-colors text-sm font-medium">
             <ArrowLeft size={16} className="mr-2" />
             返回深度文章列表
           </Link>
