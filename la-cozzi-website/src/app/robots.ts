@@ -16,5 +16,7 @@ export default function robots(): MetadataRoute.Robots {
       }
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
+    // llms.txt for AI crawlers
+    // https://lacozzi0210.vercel.app/llms.txt
   };
 }
