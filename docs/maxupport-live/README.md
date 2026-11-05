@@ -18,6 +18,7 @@ Maxupport LIVE 是生涯擺渡人 Max 的單人、單一場次序列街頭演出
 - [品牌與易拉展轉譯](./BRAND_GUIDE.md)
 - [待第二階段設定的項目](./OPEN_ITEMS.md)
 - [第二階段 Demo 操作與驗證](./PREVIEW.md)
+- [Google Sheet 即時收件方案與啟用進度](./SHEETS_SYNC.md)
 
 ## 歌曲資料來源
 

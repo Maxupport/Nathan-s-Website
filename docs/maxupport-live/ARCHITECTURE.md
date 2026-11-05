@@ -29,6 +29,8 @@ MacBook Max
 
 ## 3. 免費優先策略
 
+更新決策：第一版互動收件改以私人 Google Sheet 作為主資料來源，透過 Next.js 寫入 API 與簽章 Apps Script 橋接；尚未啟用。以下 PostgreSQL 選項保留作為未來資料量或並行需求提高時的替代，詳細實作與授權前置見 [SHEETS_SYNC.md](./SHEETS_SYNC.md)。
+
 第二階段先用以下順序做決策，且在使用者確認前不建立任何外部服務：
 
 1. **本機開發**：本機環境與測試資料完全免費，所有 schema／migration 可重建。
