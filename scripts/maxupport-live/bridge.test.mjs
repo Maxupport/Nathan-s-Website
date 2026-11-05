@@ -184,3 +184,26 @@ test("existing headers are checked rather than overwritten", () => {
   assert.equal(h.rows.length, 1);
   assert.equal(h.locked(), false);
 });
+test("signed read polling does not acquire the write lock while admin mutations do", () => {
+  const h = harness();
+  for (const operation of ["publicRead", "adminRead", "adminSave"]) {
+    h.context.liveAdminOperation = () => {
+      assert.equal(h.locked(), operation === "adminSave");
+      return { ok: true };
+    };
+    const timestamp = Date.now(),
+      payload = JSON.stringify({ operation });
+    const signature = createHmac("sha256", "x".repeat(40))
+      .update(`${timestamp}.${payload}`)
+      .digest("hex");
+    assert.equal(
+      h.context.doPost({
+        postData: {
+          contents: JSON.stringify({ timestamp, payload, signature }),
+        },
+      }).ok,
+      true,
+    );
+    assert.equal(h.locked(), false);
+  }
+});

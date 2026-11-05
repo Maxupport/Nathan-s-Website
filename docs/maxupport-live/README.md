@@ -1,6 +1,6 @@
 # Maxupport LIVE｜規格與 Preview 索引
 
-> 狀態：真實收件與本人管理已驗證；正式入口部署中，Email 待 Google 新權限確認
+> 狀態：正式入口已上線，真實收件及本人管理可使用；Email 待 Google 新權限確認
 > 分支：`feature/maxupport-live`
 > 更新日期：2026-11-06
 
@@ -20,6 +20,7 @@ Maxupport LIVE 是生涯擺渡人 Max 的單人、單一場次序列街頭演出
 - [第二階段 Demo 操作與驗證](./PREVIEW.md)
 - [Google Sheet 即時收件方案與啟用進度](./SHEETS_SYNC.md)
 - [管理操作手冊](./OPERATOR_GUIDE.md)
+- [上線與驗證紀錄](./RELEASE.md)
 
 ## 歌曲資料來源
 

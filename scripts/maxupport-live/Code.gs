@@ -99,14 +99,15 @@ function doPost(e) {
         expected.charCodeAt(i) ^ (envelope.signature.charCodeAt(i) || 0);
     if (difference !== 0) return output({ ok: false });
     const request = JSON.parse(envelope.payload);
+    // Reads never hold the write lock: audience polling must not block intake.
+    if (request.operation === "adminRead" || request.operation === "publicRead")
+      return output(
+        liveAdminOperation(request, SpreadsheetApp.openById(spreadsheetId)),
+      );
     if (
-      [
-        "adminRead",
-        "adminSave",
-        "publicRead",
-        "notificationClaim",
-        "notificationResult",
-      ].indexOf(request.operation) !== -1
+      ["adminSave", "notificationClaim", "notificationResult"].indexOf(
+        request.operation,
+      ) !== -1
     ) {
       lock = LockService.getScriptLock();
       if (!lock.tryLock(5000)) return output({ ok: false });
@@ -242,10 +243,6 @@ function liveRevision(songs, shows) {
     .join("");
 }
 function liveAdminOperation(request, book) {
-  const songSheet = book.getSheetByName("歌曲主資料");
-  if (!songSheet || songSheet.getRange(1, 1).getValue() !== "歌曲 ID")
-    return { ok: false };
-  const songs = liveRows(book, "歌曲主資料", 17);
   const showRows = liveRows(book, "LIVE 演出資料", 3);
   const shows = showRows
     .filter(function (r) {
@@ -276,6 +273,10 @@ function liveAdminOperation(request, book) {
           };
         }),
     };
+  const songSheet = book.getSheetByName("歌曲主資料");
+  if (!songSheet || songSheet.getRange(1, 1).getValue() !== "歌曲 ID")
+    return { ok: false };
+  const songs = liveRows(book, "歌曲主資料", 17);
   const revision = liveRevision(songs, showRows);
   if (request.operation === "adminRead")
     return {
