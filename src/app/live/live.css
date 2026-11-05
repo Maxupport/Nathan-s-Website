@@ -1972,6 +1972,19 @@
 .live-entry-button:hover {
   border-color: var(--green);
 }
+.live-entry-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.max-live .live-entry-subtitle {
+  color: #4d6253;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+}
 .live-entry-button.green {
   background: #e4eadb;
 }
@@ -2050,9 +2063,15 @@
     gap: 8px;
     padding: 14px 10px;
   }
-  .live-entry-button > svg:first-child {
+  .live-entry-main > svg {
     width: 26px;
     height: 26px;
+  }
+  .live-entry-main {
+    gap: 6px;
+  }
+  .max-live .live-entry-subtitle {
+    font-size: 14px;
   }
   .live-entry-arrow {
     top: 10px;
@@ -2079,7 +2098,21 @@
   }
   .max-live .live-entry-button {
     gap: 4px;
-    padding: 10px;
+    padding: 8px;
+  }
+  .live-entry-main {
+    flex-direction: row;
+    gap: 8px;
+  }
+  .live-entry-main > svg {
+    width: 22px;
+    height: 22px;
+  }
+  .live-entry-arrow {
+    width: 12px;
+    height: 12px;
+    top: 5px;
+    right: 5px;
   }
   .live-entry-heading .live-eyebrow {
     display: none;
@@ -2131,17 +2164,50 @@
     gap: 10px;
   }
   .max-live .live-entry-button {
-    flex-direction: row;
-    gap: 12px;
+    flex-direction: column;
+    gap: 4px;
     padding: 10px;
     font-size: 20px;
   }
-  .live-entry-button > svg:first-child {
+  .live-entry-main {
+    flex-direction: row;
+    gap: 10px;
+  }
+  .live-entry-main > svg {
     width: 24px;
     height: 24px;
+  }
+  .max-live .live-entry-subtitle {
+    font-size: 14px;
   }
   .live-entry-links a,
   .live-entry-links button {
     min-height: 32px;
+  }
+}
+@media (orientation: landscape) and (max-height: 350px) {
+  .live-arrival .live-header {
+    height: 40px;
+    min-height: 40px;
+  }
+  .live-entry {
+    gap: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .live-entry-heading h1 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .max-live .live-entry-button {
+    padding: 6px;
+  }
+  .live-entry-main {
+    line-height: 1.3;
   }
 }

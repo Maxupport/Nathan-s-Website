@@ -23,13 +23,22 @@ import type { ConversationTopic, Kind, Show } from "@/lib/live/model";
 
 const entrances: Array<{
   title: string;
+  subtitle: string;
   kind: Kind;
   topic?: ConversationTopic;
   icon: typeof Music2;
   color: string;
 }> = [
   {
+    title: "點歌",
+    subtitle: "想聽什麼，告訴我",
+    kind: "點歌",
+    icon: Music2,
+    color: "green",
+  },
+  {
     title: "人生職涯",
+    subtitle: "生 / 職涯擺渡對談",
     kind: "提問",
     topic: "人生職涯",
     icon: Compass,
@@ -37,6 +46,7 @@ const entrances: Array<{
   },
   {
     title: "聲音優化",
+    subtitle: "從發聲開始自由",
     kind: "提問",
     topic: "聲音優化",
     icon: Mic2,
@@ -44,6 +54,7 @@ const entrances: Array<{
   },
   {
     title: "創業想法",
+    subtitle: "誠懇投資",
     kind: "提問",
     topic: "創業想法",
     icon: Lightbulb,
@@ -51,13 +62,19 @@ const entrances: Array<{
   },
   {
     title: "保險評估",
+    subtitle: "看懂保障與需求",
     kind: "提問",
     topic: "保險評估",
     icon: Shield,
     color: "sand",
   },
-  { title: "點歌", kind: "點歌", icon: Music2, color: "green" },
-  { title: "跟我說話", kind: "鼓勵", icon: MessageCircle, color: "rose" },
+  {
+    title: "跟我說話",
+    subtitle: "你的話，我會聽",
+    kind: "鼓勵",
+    icon: MessageCircle,
+    color: "rose",
+  },
 ];
 
 function Setlist({ show }: { show: Show }) {
@@ -129,6 +146,7 @@ export default function LivePublic() {
             {entrances.map(
               ({
                 title,
+                subtitle,
                 kind: entryKind,
                 topic: entryTopic,
                 icon: Icon,
@@ -144,8 +162,11 @@ export default function LivePublic() {
                     setKind(entryKind);
                   }}
                 >
-                  <Icon size={30} strokeWidth={1.6} aria-hidden="true" />
-                  <span>{title}</span>
+                  <span className="live-entry-main">
+                    <Icon size={30} strokeWidth={1.6} aria-hidden="true" />
+                    <span>{title}</span>
+                  </span>
+                  <small className="live-entry-subtitle">{subtitle}</small>
                   <ArrowUpRight
                     size={20}
                     className="live-entry-arrow"
