@@ -16,6 +16,7 @@ import {
 } from "@/lib/live/model";
 
 type Store = {
+  intakeEnabled: boolean;
   songs: Song[];
   setSongs: Dispatch<SetStateAction<Song[]>>;
   shows: Show[];
@@ -26,15 +27,25 @@ type Store = {
 const Context = createContext<Store | null>(null);
 export default function LiveProvider({
   children,
+  intakeEnabled = false,
 }: {
   children: React.ReactNode;
+  intakeEnabled?: boolean;
 }) {
   const [songs, setSongs] = useState(demoSongs);
   const [shows, setShows] = useState(initialShows);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   return (
     <Context.Provider
-      value={{ songs, setSongs, shows, setShows, submissions, setSubmissions }}
+      value={{
+        intakeEnabled,
+        songs,
+        setSongs,
+        shows,
+        setShows,
+        submissions,
+        setSubmissions,
+      }}
     >
       {children}
     </Context.Provider>

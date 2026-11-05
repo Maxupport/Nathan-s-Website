@@ -10,15 +10,17 @@
 
 - 已新增 `POST /api/live/submissions`：伺服器驗證、同源檢查、16KB 上限、伺服器簽章、等待寫入回執。
 - 已提供 `scripts/maxupport-live/Code.gs`：Google Apps Script 收件橋接器，簽章驗證、過期限制、鎖定防並行重複寫入、固定提交 ID 重試防重複、試算表公式跳脫與全域每分鐘 60 筆的保守防護。
-- 已提供本機驗證測試；Google 實際部署、真實寫入與端到端驗收尚未執行。
-- API 預設關閉，且 Production 一律拒絕。目前 Preview 表單仍是原有記憶體 Demo，尚未接上此 API。不可只設定後端就宣稱前端已同步。
+- 已部署 Google 收件橋接器，並以明確標示的系統測試資料驗證真實寫入、同 ID 重試防重複、錯誤簽章拒絕。
+- 表單已接上 API：等待保存回執才顯示成功；送出期間避免雙擊，失敗保留原始提交，以相同 ID 與內容重試。此切片不將正式資料複製到未登入的 Demo 管理端。
+- API 預設關閉，且 Production 一律拒絕。已僅為 `feature/maxupport-live` 的 Vercel Preview 設定三項環境變數。正式網站與既有頁面不變。
+- 已完成本機瀏覽器 → Next.js API → Google Sheet → 成功畫面驗證；測試主題與四個操作事件確實保存。線上 Preview 的部署後驗證另記於交付紀錄。
 - 公開 API 只有寫入，沒有讀取觀眾個資的 GET。管理端 Google 登入、私有讀取、5 秒更新、處理／刪除／匿名化同步與點歌彙總是下個垂直切片，尚未完成。
 
 ## 紀錄範圍
 
 提交 ID、保存時間、互動類型、主題、暱稱、Email、Instagram、歌曲與演唱者、正式提交內容、回覆同意版本、獨立訂閱同意、互動事件、處理狀態、通知狀態。
 
-事件僅允許表單開啟、接受回覆同意、進入填寫頁與提交；此切片把事件隨正式提交一起保存，不包含未提交訪客的獨立瀏覽追蹤。前端事件採集尚待接上。不保存逐字輸入、IP、裝置指紋或任意附加欄位。瀏覽器時間只作互動參考，正式保存時間由 Google 端產生。
+事件僅允許表單開啟、接受回覆同意、進入填寫頁與提交；此切片把事件隨正式提交一起保存，不包含未提交訪客的獨立瀏覽追蹤。前端已採集上述四個事件，不保存逐字輸入、IP、裝置指紋或任意附加欄位。瀏覽器時間只作互動參考，正式保存時間由 Google 端產生。
 
 ## Google 端啟用前置
 
@@ -31,7 +33,7 @@
 4. Vercel 僅在此功能分支的 Preview 設定伺服器環境變數：`LIVE_SHEETS_BRIDGE_URL`（Google 提供的 `/exec` URL）、`LIVE_SHEETS_BRIDGE_SECRET`、`LIVE_SHEETS_INTAKE_ENABLED=true`。均不可使用 `NEXT_PUBLIC_`。
 5. 先以隔離測試表驗證一次寫入、超時後重試不重複、錯誤簽章拒絕、關閉功能旗標拒絕。之後才接上網站表單與 Google 登入管理端；正式資料與正式部署另行驗收。
 
-目前 Google 授權、橋接器部署與環境設定均未完成，沒有對既有 Google Sheet 寫入任何觀眾資料。新增分頁只有空白收件欄位與零筆統計，並非已啟用的收件服務。先前另建的待啟用空表不再作為串接目標。
+目前 Google 橋接器部署、Preview 環境設定與真實收件測試已完成。原始紀錄有清楚標記為「系統測試」的驗收資料，尚無真實觀眾留言。先前另建的待啟用空表不作為串接目標。密鑰、私人檔案 ID 與部署端點僅存於擁有者設定及伺服器環境，不能提交至公開儲存庫。
 
 ## 後續一致性要求
 
@@ -44,7 +46,7 @@
 測試：
 
 ```sh
-node --experimental-strip-types --test src/lib/live/intake.test.mjs scripts/maxupport-live/bridge.test.mjs
+node --experimental-strip-types --test src/lib/live/intake.test.mjs src/lib/live/submit.test.mjs scripts/maxupport-live/bridge.test.mjs
 ```
 
 官方參考：[Apps Script Web Apps](https://developers.google.com/apps-script/guides/web)、[LockService](https://developers.google.com/apps-script/reference/lock/lock-service)。

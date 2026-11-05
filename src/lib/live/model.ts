@@ -29,9 +29,30 @@ export type Show = {
   mode: Mode;
   artist: string;
   items: Item[];
-  status: "draft" | "next" | "performed";
+  status: "draft" | "next" | "current" | "performed";
   overrideWarnings: string[];
 };
+
+export function transitionShow(
+  shows: Show[],
+  id: string,
+  action: "start" | "finish",
+): Show[] {
+  const target = shows.find((show) => show.id === id);
+  if (!target) throw new Error("找不到場次。");
+  if (action === "start") {
+    if (target.status !== "next")
+      throw new Error("只有已發布的下一場可以開始演出。");
+    if (shows.some((show) => show.status === "current"))
+      throw new Error("請先結束目前演出，再開始下一場。");
+  } else if (target.status !== "current")
+    throw new Error("只有本場演出可以標記完成。");
+  return shows.map((show) =>
+    show.id === id
+      ? { ...show, status: action === "start" ? "current" : "performed" }
+      : show,
+  );
+}
 export type Kind = "點歌" | "提問" | "訂閱" | "聯絡" | "鼓勵";
 export const conversationTopics = [
   "人生職涯",

@@ -6,7 +6,23 @@ import {
   initialShows,
   previousIds,
   warnings,
+  transitionShow,
 } from "./model.ts";
+
+test("manual show lifecycle keeps current, next and history independent", () => {
+  const upcoming = { ...show(), status: "next" };
+  const draft = { ...show(), id: "later", sequence: 2 };
+  const started = transitionShow([upcoming, draft], "test", "start");
+  assert.equal(started[0].status, "current");
+  assert.equal(upcoming.status, "next");
+  const withNext = [started[0], { ...draft, status: "next" }];
+  assert.throws(() => transitionShow(withNext, "later", "start"));
+  assert.throws(() => transitionShow(withNext, "later", "finish"));
+  const finished = transitionShow(withNext, "test", "finish");
+  assert.equal(finished[0].status, "performed");
+  assert.equal(finished[1].status, "next");
+  assert.equal(transitionShow(finished, "later", "start")[1].status, "current");
+});
 
 function show(items = generate(demoSongs, "oldies", "")) {
   return {

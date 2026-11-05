@@ -17,7 +17,17 @@ export default function LiveLayout({
   if (process.env.VERCEL_ENV === "production") notFound();
   return (
     <div className="max-live">
-      <LiveProvider>{children}</LiveProvider>
+      <LiveProvider
+        intakeEnabled={
+          process.env.LIVE_SHEETS_INTAKE_ENABLED === "true" &&
+          Boolean(
+            process.env.LIVE_SHEETS_BRIDGE_URL &&
+            process.env.LIVE_SHEETS_BRIDGE_SECRET,
+          )
+        }
+      >
+        {children}
+      </LiveProvider>
     </div>
   );
 }

@@ -95,11 +95,12 @@ function Setlist({ show }: { show: Show }) {
 }
 
 export default function LivePublic() {
-  const { shows } = useLive();
+  const { shows, intakeEnabled } = useLive();
   const [kind, setKind] = useState<Kind | null>(null);
   const [topic, setTopic] = useState<ConversationTopic | undefined>();
   const [completed, setCompleted] = useState(false);
   const next = shows.find((s) => s.status === "next");
+  const current = shows.find((s) => s.status === "current");
   const previous = shows
     .filter((s) => s.status === "performed")
     .sort((a, b) => b.sequence - a.sequence)[0];
@@ -107,7 +108,9 @@ export default function LivePublic() {
     <>
       <div className="live-arrival">
         <div className="live-demo-bar">
-          PREVIEW · 體驗版，請使用測試資料；重新整理會重設。
+          {intakeEnabled
+            ? "PREVIEW · 表單已連接私人 Google Sheet；演出資訊仍為示例。"
+            : "PREVIEW · 體驗版，請使用測試資料；重新整理會重設。"}
           <Link href="/live/admin">
             管理端 Demo <ArrowUpRight size={13} />
           </Link>
@@ -269,10 +272,40 @@ export default function LivePublic() {
             <div className="live-section-heading">
               <div>
                 <p className="live-eyebrow">02 / SEE YOU AT THE NEXT CORNER</p>
-                <h2>下一次，在歌裡見。</h2>
+                <h2>
+                  {current ? "就在此刻，一起聽歌。" : "下一次，在歌裡見。"}
+                </h2>
               </div>
               <span className="live-pill">由 Max 手動更新</span>
             </div>
+            {current && (
+              <article className="live-next-card live-current-card">
+                <span className="live-eyebrow">LIVE NOW / 本場演出</span>
+                <h3>第 {current.sequence} 場・正在演出</h3>
+                <div className="live-show-meta">
+                  <span>
+                    <MapPin size={17} />
+                    {current.location}
+                  </span>
+                  <span>
+                    <CalendarDays size={17} />
+                    {new Date(`${current.date}+08:00`).toLocaleString("zh-TW", {
+                      timeZone: "Asia/Taipei",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    })}
+                  </span>
+                </div>
+                <p>{current.copy}</p>
+                <Setlist show={current} />
+                <a href="#interact" className="live-text-link">
+                  本場也可以繼續點歌、留言 <ChevronRight size={16} />
+                </a>
+              </article>
+            )}
             <div className="live-show-grid">
               <article className="live-next-card">
                 <span className="live-eyebrow">UP NEXT / 下一場</span>

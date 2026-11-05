@@ -23,6 +23,7 @@ import {
   generate,
   previousIds,
   warnings,
+  transitionShow,
   type Mode,
   type Show,
   type Slot,
@@ -314,7 +315,9 @@ export default function LiveAdmin() {
                       ? "草稿"
                       : s.status === "next"
                         ? "已發布"
-                        : "已演出"}
+                        : s.status === "current"
+                          ? "演出中"
+                          : "已演出"}
                   </small>
                 </button>
               ))}
@@ -589,6 +592,28 @@ export default function LiveAdmin() {
                     </>
                   )}
                   {show.status === "next" && (
+                    <button
+                      className="live-button live-full"
+                      onClick={() => {
+                        try {
+                          const updated = transitionShow(
+                            shows,
+                            show.id,
+                            "start",
+                          );
+                          setShows(updated);
+                          setNotice(
+                            "已開始本場演出，觀眾頁會優先顯示本場歌單；可繼續發布下一場預告。",
+                          );
+                        } catch (error) {
+                          setNotice((error as Error).message);
+                        }
+                      }}
+                    >
+                      開始本場演出 <Music2 size={16} />
+                    </button>
+                  )}
+                  {show.status === "current" && (
                     <>
                       <button
                         className="live-button live-full"
@@ -597,7 +622,7 @@ export default function LiveAdmin() {
                             setConfirmComplete(true);
                             return;
                           }
-                          updateShow({ status: "performed" });
+                          setShows(transitionShow(shows, show.id, "finish"));
                           setConfirmComplete(false);
                           setNotice(
                             "這場已移到上一場歌單。請選擇下一份草稿發布新預告。",
