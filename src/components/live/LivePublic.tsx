@@ -54,7 +54,7 @@ const entrances: Array<{
   },
   {
     title: "創業想法",
-    subtitle: "誠懇投資",
+    subtitle: "誠懇不說教投資人",
     kind: "提問",
     topic: "創業想法",
     icon: Lightbulb,
@@ -62,7 +62,7 @@ const entrances: Array<{
   },
   {
     title: "保險評估",
-    subtitle: "看懂保障與需求",
+    subtitle: "不是每個人都需要，但需要的人很需要",
     kind: "提問",
     topic: "保險評估",
     icon: Shield,
