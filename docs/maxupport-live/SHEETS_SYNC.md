@@ -60,9 +60,11 @@ node --experimental-strip-types --test src/lib/live/intake.test.mjs src/lib/live
 
 ## 通知服務
 
-`MailBridge.gs` 部署於獨立 Google 專案，只需 MailApp 寄信權限，不讀取 Gmail 收件匣。已完成程式、分離密鑰與測試；Google 目前要求新增寄信權限，正在等待具體確認，尚未寄出任何通知。
+`MailBridge.gs` 部署於獨立 Google 專案，只需 MailApp 寄信權限，不讀取 Gmail 收件匣。使用者已具體同意新增寄信權限，Google 部署完成；本人 Gmail 收件匣已確認收到系統測試信，重試回傳 duplicate=true 而不重寄。
 
-授權完成後才設定伺服器 `LIVE_EMAIL_BRIDGE_URL`，並在資料橋接器指令碼屬性啟用 `LIVE_NOTIFICATIONS_ENABLED=true`。佇列在同檔案 `LIVE 通知佇列`，只記 ID 與狀態；原始留言及 Email 不複製進佇列。Next.js `after` 在回應後處理寄送，可見管理頁有待寄通知時也會處理。
+已設定伺服器 `LIVE_EMAIL_BRIDGE_URL`，資料橋接器指令碼屬性 `LIVE_NOTIFICATIONS_ENABLED=true`，並重新部署 Production 使設定生效。佇列在同檔案 `LIVE 通知佇列`，只記 ID 與狀態；原始留言及 Email 不複製進佇列。Next.js `after` 在回應後處理寄送，可見管理頁有待寄通知時也會處理。
+
+正式端到端驗證使用經原生 Google Sheet 工具核對的既有系統測試 ID：網站回應 201 duplicate=true、未新增原始留言，通知佇列完成待寄送→處理中→已寄送，且本人 Gmail 確認收到對應提交 ID 的提醒。未寄給任何觀眾或測試 IG 帳號。
 
 新提交提醒 Max；發布歌單時通知有 Email 的點歌者，沒有 Email 則建立 IG 人工狀態。寄送不明不自動重寄，額度不足保留至至少 24 小時後再嘗試。沒有事件且管理頁未開啟時不保證背景排程會執行，管理者可按「處理待寄通知」。刪除／匿名化會取消相關尚未完成通知。
 

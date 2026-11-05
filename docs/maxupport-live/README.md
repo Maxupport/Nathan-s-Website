@@ -1,6 +1,6 @@
 # Maxupport LIVE｜規格與 Preview 索引
 
-> 狀態：正式入口已上線，真實收件及本人管理可使用；Email 待 Google 新權限確認
+> 狀態：正式入口、真實收件、本人管理及 Email 通知已啟用
 > 分支：`feature/maxupport-live`
 > 更新日期：2026-11-06
 
@@ -32,4 +32,4 @@ Maxupport LIVE 是生涯擺渡人 Max 的單人、單一場次序列街頭演出
 
 ## 範圍界線
 
-`/live` 與 `/live/admin` 已接上真實私人 Sheet、本人 Google 登入、保存、分類、歌單與手動場次切換。未設定服務的本機仍可使用獨立 Demo。Email 程式及佇列已通過測試，但 Google 新寄信權限尚待確認；訂閱由現有 Google 表單完成最後一步。正式入口採明確開關部署，main 分支及既有網站頁面程式不變。
+`/live` 與 `/live/admin` 已接上真實私人 Sheet、本人 Google 登入、保存、分類、歌單與手動場次切換。Email 已取得具體授權、啟用並完成本人信箱的真實寄送及網站佇列驗證。未設定服務的本機仍可使用獨立 Demo；訂閱由現有 Google 表單完成最後一步。正式入口採明確開關部署，main 分支及既有網站頁面程式不變。
