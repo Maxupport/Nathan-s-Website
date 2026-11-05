@@ -1913,6 +1913,11 @@
 }
 
 /* Six entrances share the visible arrival screen, including its header. */
+@media (orientation: landscape) {
+  .live-entry-button:nth-child(1) { order: 2; }
+  .live-entry-button:nth-child(2) { order: 1; }
+  .live-entry-button:nth-child(n + 3) { order: 3; }
+}
 .live-arrival {
   min-height: 100svh;
   display: flex;
