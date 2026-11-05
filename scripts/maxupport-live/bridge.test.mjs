@@ -22,7 +22,7 @@ const headers = [
   "處理狀態",
   "通知狀態",
 ];
-function harness() {
+function harness(activeEmail = "") {
   const rows = [headers];
   let held = false;
   const properties = {
@@ -51,6 +51,13 @@ function harness() {
     },
   };
   const context = vm.createContext({
+    HtmlService: { createHtmlOutput: (html) => html },
+    Session: {
+      getActiveUser: () => ({ getEmail: () => activeEmail }),
+      getEffectiveUser: () => {
+        throw new Error("Effective user must never authorize login");
+      },
+    },
     ContentService: {
       MimeType: { JSON: "application/json" },
       createTextOutput: (text) => ({ setMimeType: () => JSON.parse(text) }),
@@ -59,6 +66,7 @@ function harness() {
       getScriptProperties: () => ({ getProperty: (key) => properties[key] }),
     },
     Utilities: {
+      base64EncodeWebSafe: (value) => Buffer.from(value).toString("base64url"),
       Charset: { UTF_8: "utf8" },
       computeHmacSha256Signature: (value, secret) => [
         ...createHmac("sha256", secret).update(value).digest(),
@@ -125,6 +133,34 @@ test("script persists, releases lock, escapes formulas and deduplicates a retrie
   assert.equal(retry.duplicate, true);
   assert.equal(retry.savedAt, first.savedAt);
   assert.equal(h.rows.length, 2);
+});
+test("Google login refuses anonymous or different active users and arbitrary return URLs", () => {
+  const request = {
+    parameter: {
+      state: "a".repeat(64),
+      returnTo: "http://localhost:3100/live/auth",
+    },
+  };
+  for (const email of ["", "other@gmail.com"]) {
+    assert.ok(!harness(email).context.doGet(request).includes("#proof="));
+  }
+  const owner = harness("maxupport@gmail.com");
+  assert.ok(owner.context.doGet(request).includes("#proof="));
+  assert.ok(
+    !owner.context
+      .doGet({
+        parameter: {
+          ...request.parameter,
+          returnTo: "https://evil.example/live/auth",
+        },
+      })
+      .includes("#proof="),
+  );
+  assert.ok(
+    !owner.context
+      .doGet({ parameter: { ...request.parameter, state: "wrong" } })
+      .includes("#proof="),
+  );
 });
 test("invalid signatures and stale envelopes do not write", () => {
   const h = harness();

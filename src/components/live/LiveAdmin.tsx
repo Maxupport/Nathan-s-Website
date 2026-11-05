@@ -17,7 +17,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, useEffectEvent, type FormEvent } from "react";
 import {
   categories,
   generate,
@@ -38,8 +38,34 @@ const tabs: Array<{ key: Tab; label: string; icon: typeof Inbox }> = [
   { key: "inbox", label: "觀眾收件匣", icon: Inbox },
 ];
 export default function LiveAdmin() {
-  const { songs, setSongs, shows, setShows, submissions, setSubmissions } =
-    useLive();
+  const {
+    songs,
+    setSongs,
+    shows,
+    setShows,
+    submissions,
+    setSubmissions,
+    managed,
+    loaded,
+    saving,
+    dirty,
+    syncMessage,
+    refreshAdmin,
+    saveAdmin,
+  } = useLive();
+  const poll = useEffectEvent(() => {
+    if (document.visibilityState === "visible") void refreshAdmin();
+  });
+  useEffect(() => {
+    if (!managed) return;
+    poll();
+    const interval = setInterval(poll, 5000);
+    document.addEventListener("visibilitychange", poll);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", poll);
+    };
+  }, [managed]);
   const [tab, setTab] = useState<Tab>("shows");
   const [selected, setSelected] = useState("show-1");
   const [notice, setNotice] = useState("");
@@ -114,7 +140,9 @@ export default function LiveAdmin() {
     );
     setConfirmPublish(false);
     setNotice(
-      "Demo 預告已發布，可以切到觀眾頁查看。通知僅建立示例狀態，未實際寄送。",
+      managed
+        ? "預告已準備好，請按「儲存修改」後公開。通知尚未寄送。"
+        : "Demo 預告已發布，可以切到觀眾頁查看。通知僅建立示例狀態，未實際寄送。",
     );
   }
   function newShow() {
@@ -151,7 +179,11 @@ export default function LiveAdmin() {
     if (!song.title || !song.artist) return;
     setSongs((old) => [...old, song]);
     setAdding(false);
-    setNotice("已加入示例歌庫，預設可上場。");
+    setNotice(
+      managed
+        ? "歌曲已加入，預設可上場；請儲存修改。"
+        : "已加入示例歌庫，預設可上場。",
+    );
   }
   function exportCsv() {
     const rows = [
@@ -187,7 +219,7 @@ export default function LiveAdmin() {
       ]),
     ];
     const safe = (value: string) =>
-      `"${(/^[=+@\-\t\r]/.test(value) ? "'" + value : value).replaceAll('"', '""')}"`;
+      `"${(/^[\s]*[=+@\-]/.test(value) ? "'" + value : value).replaceAll('"', '""')}"`;
     const url = URL.createObjectURL(
       new Blob(
         ["\uFEFF", rows.map((row) => row.map(safe).join(",")).join("\r\n")],
@@ -196,10 +228,20 @@ export default function LiveAdmin() {
     );
     const a = document.createElement("a");
     a.href = url;
-    a.download = "maxupport-live-demo.csv";
+    a.download = managed ? "maxupport-live.csv" : "maxupport-live-demo.csv";
     a.click();
     URL.revokeObjectURL(url);
   }
+  if (managed && !loaded)
+    return (
+      <main className="live-container live-section">
+        <h1>正在讀取私人管理資料</h1>
+        <p role="status">{syncMessage || "正在連接 Google Sheet…"}</p>
+        <button className="live-button" onClick={() => void refreshAdmin()}>
+          重新載入
+        </button>
+      </main>
+    );
   return (
     <div className="live-admin">
       <aside className="live-sidebar">
@@ -224,14 +266,33 @@ export default function LiveAdmin() {
           ))}
         </nav>
         <div className="live-sidebar-bottom">
-          <span className="live-pill">DEMO WORKSPACE</span>
+          <span className="live-pill">
+            {managed ? "PRIVATE WORKSPACE" : "DEMO WORKSPACE"}
+          </span>
           <p>
-            獨立示例歌庫，未同步 Google Sheet。
+            {managed
+              ? "已登入 Max 的私人管理端。"
+              : "獨立示例歌庫，未同步 Google Sheet。"}
             <br />
-            尚未啟用登入、永久保存或寄信。
+            {managed
+              ? "資料來源為同一份 Google Sheet。"
+              : "尚未啟用登入、永久保存或寄信。"}
             <br />
-            重新整理會重設所有操作。
+            {managed
+              ? "修改後請儲存，未儲存內容只在本頁。"
+              : "重新整理會重設所有操作。"}
           </p>
+          {managed && (
+            <button
+              className="live-text-link"
+              onClick={async () => {
+                await fetch("/api/live/auth/session", { method: "DELETE" });
+                location.replace("/live/admin");
+              }}
+            >
+              登出管理端
+            </button>
+          )}
           <Link href="/live">
             查看觀眾頁 <ArrowUpRight size={16} />
           </Link>
@@ -248,6 +309,36 @@ export default function LiveAdmin() {
           </Link>
         </header>
         <div role="status" aria-live="polite">
+          {managed && (
+            <div className="live-notice">
+              <div>
+                <p>{syncMessage || "正在讀取 Google Sheet…"}</p>
+                <small>
+                  {dirty ? "有尚未儲存的修改" : "每 5 秒更新可見頁面"}
+                </small>
+              </div>
+              <button
+                className="live-button"
+                disabled={!loaded || saving || !dirty}
+                onClick={() => void saveAdmin()}
+              >
+                {saving ? "正在儲存…" : "儲存修改"}
+              </button>
+              <button
+                className="live-button secondary"
+                disabled={saving}
+                onClick={() => {
+                  if (
+                    !dirty ||
+                    window.confirm("放棄尚未儲存的修改並讀取 Google Sheet？")
+                  )
+                    void refreshAdmin(true);
+                }}
+              >
+                重新載入
+              </button>
+            </div>
+          )}
           {notice && (
             <div className="live-notice">
               <Check size={18} />
@@ -257,7 +348,7 @@ export default function LiveAdmin() {
         </div>
         <div className="live-stats">
           <div>
-            <small>示例歌曲</small>
+            <small>{managed ? "歌曲資料庫" : "示例歌曲"}</small>
             <strong>
               {songs.length}
               <span>首</span>
@@ -463,7 +554,7 @@ export default function LiveAdmin() {
                           value={replacement}
                           onChange={(e) => setReplacement(e.target.value)}
                         >
-                          <option value="">選擇示例歌曲</option>
+                          <option value="">{managed ? "選擇歌曲" : "選擇示例歌曲"}</option>
                           {songs.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.title} — {s.artist}
@@ -651,14 +742,18 @@ export default function LiveAdmin() {
             <div className="live-workspace-heading">
               <div>
                 <h2>把熟悉的歌，一首首收好。</h2>
-                <p>以下為獨立示例分類。你正在編輯的 Google Sheet 不受影響。</p>
+                <p>
+                  {managed
+                    ? "分類留給你決定；未分類歌曲不會自動套用主題。修改後請儲存至 Google Sheet。"
+                    : "以下為獨立示例分類。你正在編輯的 Google Sheet 不受影響。"}
+                </p>
               </div>
               <button
                 className="live-button"
                 onClick={() => setAdding(!adding)}
               >
                 <Plus size={17} />
-                新增示例歌曲
+                {managed ? "新增歌曲" : "新增示例歌曲"}
               </button>
             </div>
             {adding && (
@@ -741,6 +836,7 @@ export default function LiveAdmin() {
                             )
                           }
                         >
+                          <option value="">未分類</option>
                           {categories.map((c) => (
                             <option key={c}>{c}</option>
                           ))}
@@ -783,7 +879,11 @@ export default function LiveAdmin() {
             <div className="live-workspace-heading">
               <div>
                 <h2>每一個聲音，都有地方放。</h2>
-                <p>在同一分頁送出 Demo 表單，即可在這裡查看。</p>
+                <p>
+                  {managed
+                    ? "來自 Google Sheet 的正式提交。處理狀態、匿名化與刪除需按「儲存修改」才會生效。"
+                    : "在同一分頁送出 Demo 表單，即可在這裡查看。"}
+                </p>
               </div>
               <div className="live-inline-actions">
                 <button
@@ -800,7 +900,7 @@ export default function LiveAdmin() {
                   onClick={() => {
                     if (
                       window.confirm(
-                        "確認將所有 Demo 互動匿名化？將清除暱稱、Email、IG 與留言內容。",
+                        "確認將目前這些互動匿名化？將清除暱稱、Email、IG 與留言內容。",
                       )
                     ) {
                       setSubmissions((old) =>
@@ -813,7 +913,11 @@ export default function LiveAdmin() {
                           notification: "無聯絡方式",
                         })),
                       );
-                      setNotice("本次 Demo 互動已匿名化。");
+                      setNotice(
+                        managed
+                          ? "已準備匿名化，請儲存修改。"
+                          : "本次 Demo 互動已匿名化。",
+                      );
                     }
                   }}
                 >
@@ -892,7 +996,11 @@ export default function LiveAdmin() {
                         className="live-icon-button"
                         aria-label="刪除此則互動"
                         onClick={() => {
-                          if (window.confirm("確認刪除此則 Demo 互動？"))
+                          if (
+                            window.confirm(
+                              "確認刪除此則互動？儲存後會從 Google Sheet 移除。",
+                            )
+                          )
                             setSubmissions((old) =>
                               old.filter((item) => item.id !== s.id),
                             );

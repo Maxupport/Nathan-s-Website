@@ -16,7 +16,7 @@ import {
   Shield,
   Sparkles,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLive } from "./LiveProvider";
 import InteractionForm from "./InteractionForm";
 import type { ConversationTopic, Kind, Show } from "@/lib/live/model";
@@ -95,7 +95,45 @@ function Setlist({ show }: { show: Show }) {
 }
 
 export default function LivePublic() {
-  const { shows, intakeEnabled } = useLive();
+  const { shows: demoShows, intakeEnabled, managed } = useLive();
+  const [publicShows, setPublicShows] = useState<Show[]>([]);
+  const shows = managed ? publicShows : demoShows;
+  const [showError, setShowError] = useState("");
+  // Public endpoint returns only published show fields, never intake or contacts.
+  useEffect(() => {
+    if (!managed) return;
+    let stopped = false,
+      pending = false;
+    const update = async () => {
+      if (pending || document.visibilityState !== "visible") return;
+      pending = true;
+      try {
+        const response = await fetch("/api/live/shows", {
+          cache: "no-store",
+          signal: AbortSignal.timeout(30000),
+        });
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        if (!stopped) {
+          setPublicShows(data.shows);
+          setShowError("");
+        }
+      } catch {
+        if (!stopped)
+          setShowError(
+            "暫時無法更新演出資訊，請稍後重試；點歌與留言仍可使用。",
+          );
+      } finally {
+        pending = false;
+      }
+    };
+    void update();
+    const timer = setInterval(() => void update(), 15000);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [managed]);
   const [kind, setKind] = useState<Kind | null>(null);
   const [topic, setTopic] = useState<ConversationTopic | undefined>();
   const [completed, setCompleted] = useState(false);
@@ -109,10 +147,12 @@ export default function LivePublic() {
       <div className="live-arrival">
         <div className="live-demo-bar">
           {intakeEnabled
-            ? "PREVIEW · 表單已連接私人 Google Sheet；演出資訊仍為示例。"
+            ? managed
+              ? "PREVIEW · 表單與演出資訊已連接 Google Sheet。"
+              : "PREVIEW · 表單已連接私人 Google Sheet；演出資訊仍為示例。"
             : "PREVIEW · 體驗版，請使用測試資料；重新整理會重設。"}
           <Link href="/live/admin">
-            管理端 Demo <ArrowUpRight size={13} />
+            {managed ? "Max 管理端" : "管理端 Demo"} <ArrowUpRight size={13} />
           </Link>
         </div>
         <header className="live-header live-container">
@@ -269,6 +309,11 @@ export default function LivePublic() {
         </div>
         <section id="shows" className="live-shows">
           <div className="live-container live-section">
+            {showError && (
+              <p className="live-error" role="status">
+                {showError}
+              </p>
+            )}
             <div className="live-section-heading">
               <div>
                 <p className="live-eyebrow">02 / SEE YOU AT THE NEXT CORNER</p>

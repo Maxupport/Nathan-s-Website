@@ -11,7 +11,7 @@ export type Song = {
   id: string;
   title: string;
   artist: string;
-  category: Category;
+  category: Category | "";
   ready: boolean;
   showcase: boolean;
   serious: boolean;
@@ -75,7 +75,7 @@ export type Submission = {
   subscriptionConsent: boolean;
   createdAt: string;
   status: "待處理" | "處理中" | "已完成";
-  notification: "尚未排入" | "Email 待串接" | "IG 待手動通知" | "無聯絡方式";
+  notification: string;
 };
 
 // Deliberately independent demo classifications. Never synchronizes to the owner's Sheet.

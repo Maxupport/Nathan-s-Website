@@ -13,11 +13,12 @@ export default function LiveLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // This milestone contains only a demo. Do not expose it on production deployments.
+  // Release gate: keep LIVE isolated until production acceptance is complete.
   if (process.env.VERCEL_ENV === "production") notFound();
   return (
     <div className="max-live">
       <LiveProvider
+        managed={process.env.LIVE_ADMIN_AUTH_ENABLED === "true"}
         intakeEnabled={
           process.env.LIVE_SHEETS_INTAKE_ENABLED === "true" &&
           Boolean(

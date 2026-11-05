@@ -14,7 +14,9 @@
 - 表單已接上 API：等待保存回執才顯示成功；送出期間避免雙擊，失敗保留原始提交，以相同 ID 與內容重試。此切片不將正式資料複製到未登入的 Demo 管理端。
 - API 預設關閉，且 Production 一律拒絕。已僅為 `feature/maxupport-live` 的 Vercel Preview 設定三項環境變數。正式網站與既有頁面不變。
 - 已完成本機瀏覽器 → Next.js API → Google Sheet → 成功畫面驗證；測試主題與四個操作事件確實保存。線上 Preview 的部署後驗證另記於交付紀錄。
-- 公開 API 只有寫入，沒有讀取觀眾個資的 GET。管理端 Google 登入、私有讀取、5 秒更新、處理／刪除／匿名化同步與點歌彙總是下個垂直切片，尚未完成。
+- 已完成本人 Google 登入、私人管理 API、每 5 秒更新可見管理頁、手動重新載入及儲存修改。歌庫只更新改動歌曲的前八欄，不覆蓋 Kala 連結、來源與備註；場次存於同一檔案的 `LIVE 演出資料` 分頁。
+- 處理狀態、指定 ID 的刪除／匿名化已接上 Sheet；瀏覽器實測草稿保存、重新讀回及一筆系統測試留言的狀態保存。整份檔案保持私人。
+- 公開 `/api/live/shows` 只回傳已發布場次的明確欄位；不提供原始留言、聯絡資料、未發布草稿或私人試算表位置。公開頁每 15 秒更新演出資訊。
 
 ## 紀錄範圍
 
@@ -29,9 +31,10 @@
    `提交 ID｜保存時間｜類型｜主題｜暱稱｜Email｜Instagram｜歌曲｜演唱者｜內容｜回覆同意版本｜訂閱同意｜互動事件｜處理狀態｜通知狀態`
 
 2. 建立綁定於該檔案的 Apps Script，貼入 `Code.gs`；在 Script Properties 設定 `LIVE_SPREADSHEET_ID` 與至少 32 字元的隨機 `LIVE_BRIDGE_SECRET`。不要將密鑰貼在聊天、Git 或試算表儲存格。
-3. Max 在 Google 部署流程中完成帳號授權。橋接器需以擁有者身分執行，對伺服器開放 Web App 呼叫；資料檔案維持私人。公開端點只有驗證簽章後才可寫入，沒有讀取功能。
+3. 橋接器以擁有者身分執行，對伺服器開放 Web App 呼叫；資料檔案維持私人。所有資料操作均需伺服器簽章。管理端另外驗證本人 Google 帳號，不能以擁有者的執行身分取代訪客身分。
 4. Vercel 僅在此功能分支的 Preview 設定伺服器環境變數：`LIVE_SHEETS_BRIDGE_URL`（Google 提供的 `/exec` URL）、`LIVE_SHEETS_BRIDGE_SECRET`、`LIVE_SHEETS_INTAKE_ENABLED=true`。均不可使用 `NEXT_PUBLIC_`。
 5. 先以隔離測試表驗證一次寫入、超時後重試不重複、錯誤簽章拒絕、關閉功能旗標拒絕。之後才接上網站表單與 Google 登入管理端；正式資料與正式部署另行驗收。
+6. `LIVE_ADMIN_AUTH_ENABLED=true` 僅設定於此功能分支 Preview。登入回傳位置採固定允許清單，Google `Session.getActiveUser().getEmail()` 必須是 Max 本人；無法辨識或其他帳號一律拒絕。60 秒簽章回執經 HttpOnly 隨機 state cookie 驗證後，換成 12 小時 HttpOnly、SameSite=Lax、HTTPS Secure 管理工作階段。`getEffectiveUser()` 不可用於授權。
 
 目前 Google 橋接器部署、Preview 環境設定與真實收件測試已完成。原始紀錄有清楚標記為「系統測試」的驗收資料，尚無真實觀眾留言。先前另建的待啟用空表不作為串接目標。密鑰、私人檔案 ID 與部署端點僅存於擁有者設定及伺服器環境，不能提交至公開儲存庫。
 
@@ -40,6 +43,8 @@
 - 對應一筆原始提交一個穩定 ID；同歌曲不同觀眾仍各存一筆，統計時合併。
 - 不在每位觀眾載入公開頁時讀取整張私人表；公開歌單另做可公開資料投影。
 - Sheets 的手動修改不會自動觸發網站更新，須透過受保護輪詢讀回。API 更新不可覆蓋不相關欄位。
+- 歌庫與場次修改帶入版本雜湊；若 Sheet 另有手動修改則回傳 409，要求重新載入。新增觀眾提交不會令歌庫版本失效，也不會被管理端批次覆蓋。
+- Sheet 多個範圍寫入並非資料庫交易；若 Google 寫入中途失敗，畫面不宣稱完整成功，須重新載入檢查實際保存範圍。
 - 刪除與匿名化要涵蓋原始記錄及衍生彙總，不能留下另一份含個資的事件副本。
 - 既有文章／小說訂閱仍走原系統；保存訂閱意願不等於已建立訂閱。
 
@@ -50,3 +55,5 @@ node --experimental-strip-types --test src/lib/live/intake.test.mjs src/lib/live
 ```
 
 官方參考：[Apps Script Web Apps](https://developers.google.com/apps-script/guides/web)、[LockService](https://developers.google.com/apps-script/reference/lock/lock-service)。
+
+登入依據：[Session 的 active user 與 effective user 差異](https://developers.google.com/apps-script/reference/base/session)。此版本為單一擁有者的 Google Apps Script 身分驗證，不是多使用者 Google OAuth 產品。正式解除 Preview 保護前仍須完成公開流量、通知及訂閱驗收。
