@@ -11,6 +11,7 @@
   font-family: Arial, "PingFang TC", "Microsoft JhengHei", sans-serif;
   line-height: 1.65;
   color-scheme: light;
+  font-size: 16px;
 }
 .max-live * {
   box-sizing: border-box;
@@ -1448,16 +1449,21 @@
     width: calc(100% - 40px);
   }
   .live-demo-bar {
-    font-size: 9px;
+    font-size: 12px;
     gap: 10px;
     justify-content: space-between;
     padding: 8px 14px;
+    align-items: flex-start;
   }
   .live-demo-bar a {
     white-space: nowrap;
   }
   .live-header {
-    height: 82px;
+    min-height: 90px;
+    height: auto;
+    padding: 18px 0;
+    flex-wrap: wrap;
+    gap: 12px;
   }
   .live-logo {
     font-size: 25px;
@@ -1465,7 +1471,7 @@
   }
   .live-header nav {
     gap: 18px;
-    font-size: 11px;
+    font-size: 14px;
   }
   .live-header nav a:first-child {
     display: none;
@@ -1487,20 +1493,24 @@
     letter-spacing: 1.4px;
   }
   .live-intro {
-    font-size: 16px;
+    font-size: 19px;
   }
   .live-hero-copy > .live-muted {
-    font-size: 13px;
+    font-size: 17px;
     margin-top: 16px;
     margin-bottom: 24px;
   }
   .live-quiet-link {
     display: inline-flex;
-    margin: 0 0 0 18px;
+    margin: 16px 0 0;
+    min-height: 44px;
+    font-size: 16px;
   }
   .live-hero .live-button {
     padding: 12px 16px;
-    font-size: 12px;
+    font-size: 16px;
+    min-height: 50px;
+    margin-right: 18px;
   }
   .live-stage {
     min-height: 340px;
@@ -1582,7 +1592,7 @@
     padding-bottom: 45px;
   }
   .live-section h2 {
-    font-size: 25px;
+    font-size: 28px;
     margin-top: 10px;
   }
   .live-section-heading {
@@ -1591,7 +1601,7 @@
   }
   .live-section-heading > p {
     margin-top: 14px;
-    font-size: 11px;
+    font-size: 16px;
   }
   .live-section-heading > .live-pill {
     margin-top: 15px;
@@ -1629,22 +1639,27 @@
     margin-bottom: 25px;
   }
   .live-interaction h3 {
-    font-size: 14px;
+    font-size: 18px;
+    white-space: normal;
+    line-height: 1.6;
+    text-wrap: balance;
   }
   .live-interaction > p {
-    font-size: 10px;
+    font-size: 15px;
     min-height: 0;
   }
   .live-card-bottom {
     margin-top: 22px;
+    font-size: 15px;
+    min-height: 44px;
   }
   .live-promise p {
-    font-size: 12px;
+    font-size: 16px;
   }
   .live-promise span {
     display: block;
     margin: 4px 0 0;
-    font-size: 10px;
+    font-size: 14px;
   }
   .live-show-grid {
     grid-template-columns: 1fr;
@@ -1669,7 +1684,7 @@
     font-size: 26px;
   }
   .live-about > div:last-child {
-    font-size: 12px;
+    font-size: 16px;
   }
   .live-footer {
     padding: 24px 0;
@@ -1689,7 +1704,7 @@
     padding: 32px 22px;
   }
   .live-modal h2 {
-    font-size: 25px;
+    font-size: 28px;
   }
   .live-form-row {
     grid-template-columns: 1fr;
@@ -1835,6 +1850,59 @@
   }
   .live-modal {
     max-height: 88dvh;
+  }
+  .live-show-grid p,
+  .live-show-meta,
+  .live-text-link,
+  .live-consent-step,
+  .live-modal .live-muted,
+  .live-success p:not(.live-eyebrow) {
+    font-size: 16px;
+  }
+  .live-pill,
+  .live-eyebrow,
+  .live-hero .live-eyebrow,
+  .live-footer > span,
+  .live-footer p,
+  .live-footer .live-logo > span {
+    font-size: 12px;
+  }
+  .live-setlist {
+    grid-template-columns: 1fr;
+  }
+  .live-setlist strong {
+    font-size: 18px;
+  }
+  .live-setlist small,
+  .live-setlist li > span {
+    font-size: 14px;
+  }
+  .live-modal label,
+  .live-check {
+    font-size: 16px !important;
+  }
+  .live-modal input,
+  .live-modal textarea,
+  .live-modal select,
+  .live-modal .live-button {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  .live-modal input[type="checkbox"] {
+    min-height: 0;
+    width: 22px;
+    height: 22px;
+  }
+  .live-form-note,
+  .live-check small,
+  .live-error,
+  .live-modal label > span,
+  .live-modal em {
+    font-size: 14px !important;
+  }
+  .live-modal-close {
+    width: 44px;
+    height: 44px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
