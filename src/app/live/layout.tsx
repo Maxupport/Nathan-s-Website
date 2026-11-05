@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import LiveProvider from "@/components/live/LiveProvider";
+import { liveAvailable } from "@/lib/live/config";
 import "./live.css";
 
 export const metadata: Metadata = {
@@ -13,11 +14,11 @@ export default function LiveLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Release gate: keep LIVE isolated until production acceptance is complete.
-  if (process.env.VERCEL_ENV === "production") notFound();
+  if (!liveAvailable()) notFound();
   return (
     <div className="max-live">
       <LiveProvider
+        preview={process.env.VERCEL_ENV !== "production"}
         managed={process.env.LIVE_ADMIN_AUTH_ENABLED === "true"}
         intakeEnabled={
           process.env.LIVE_SHEETS_INTAKE_ENABLED === "true" &&

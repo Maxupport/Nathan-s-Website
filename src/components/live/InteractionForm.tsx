@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Check, X, ArrowRight } from "lucide-react";
 import { useLive } from "./LiveProvider";
 import type { ConversationTopic, Kind, Submission } from "@/lib/live/model";
-import { submitInteraction } from "@/lib/live/submit";
+import { submitInteraction, SubmissionError } from "@/lib/live/submit";
 
 export default function InteractionForm({
   kind,
@@ -96,10 +96,14 @@ export default function InteractionForm({
     try {
       await submitInteraction(retry.current);
       onComplete();
-    } catch {
-      setError(
-        "尚未確認保存成功。內容已保留在此表單；請按「重試保存」，重試會使用相同提交編號。請勿關閉或重新整理。",
-      );
+    } catch (error) {
+      if (error instanceof SubmissionError && !error.retryable) {
+        retry.current = null;
+        setError(error.message);
+      } else
+        setError(
+          "尚未確認保存成功。內容已保留在此表單；請按「重試保存」，重試會使用相同提交編號。請勿關閉或重新整理。",
+        );
     } finally {
       sending.current = false;
       setPending(false);
@@ -157,6 +161,16 @@ export default function InteractionForm({
                 </>
               )}
             </p>
+            {intakeEnabled && kind === "訂閱" && (
+              <a
+                className="live-button secondary"
+                href="https://docs.google.com/forms/d/e/1FAIpQLScjPUif6r1y_82PTK5rKjYFK7Qjt6dWf_p3U2UG19O7gS8pVw/viewform"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                繼續至既有表單完成訂閱 <ArrowRight size={17} />
+              </a>
+            )}
             <button className="live-button" onClick={onClose}>
               回到街角 <ArrowRight size={17} />
             </button>

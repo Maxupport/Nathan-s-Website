@@ -61,6 +61,13 @@ export const conversationTopics = [
   "保險評估",
 ] as const;
 export type ConversationTopic = (typeof conversationTopics)[number];
+export function songKey(title: string, artist: string) {
+  return JSON.stringify(
+    [title, artist].map((value) =>
+      value.normalize("NFKC").trim().toLowerCase(),
+    ),
+  );
+}
 export type Submission = {
   id: string;
   kind: Kind;

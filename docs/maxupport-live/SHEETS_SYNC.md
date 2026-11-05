@@ -12,7 +12,7 @@
 - 已提供 `scripts/maxupport-live/Code.gs`：Google Apps Script 收件橋接器，簽章驗證、過期限制、鎖定防並行重複寫入、固定提交 ID 重試防重複、試算表公式跳脫與全域每分鐘 60 筆的保守防護。
 - 已部署 Google 收件橋接器，並以明確標示的系統測試資料驗證真實寫入、同 ID 重試防重複、錯誤簽章拒絕。
 - 表單已接上 API：等待保存回執才顯示成功；送出期間避免雙擊，失敗保留原始提交，以相同 ID 與內容重試。此切片不將正式資料複製到未登入的 Demo 管理端。
-- API 預設關閉，且 Production 一律拒絕。已僅為 `feature/maxupport-live` 的 Vercel Preview 設定三項環境變數。正式網站與既有頁面不變。
+- API 預設關閉。Preview 已設定收件與登入；Production 另需 `LIVE_RELEASE_ENABLED=true` 才開放。正式部署使用功能分支提交，不推送 main，既有頁面程式不變。
 - 已完成本機瀏覽器 → Next.js API → Google Sheet → 成功畫面驗證；測試主題與四個操作事件確實保存。線上 Preview 的部署後驗證另記於交付紀錄。
 - 已完成本人 Google 登入、私人管理 API、每 5 秒更新可見管理頁、手動重新載入及儲存修改。歌庫只更新改動歌曲的前八欄，不覆蓋 Kala 連結、來源與備註；場次存於同一檔案的 `LIVE 演出資料` 分頁。
 - 處理狀態、指定 ID 的刪除／匿名化已接上 Sheet；瀏覽器實測草稿保存、重新讀回及一筆系統測試留言的狀態保存。整份檔案保持私人。
@@ -34,9 +34,9 @@
 3. 橋接器以擁有者身分執行，對伺服器開放 Web App 呼叫；資料檔案維持私人。所有資料操作均需伺服器簽章。管理端另外驗證本人 Google 帳號，不能以擁有者的執行身分取代訪客身分。
 4. Vercel 僅在此功能分支的 Preview 設定伺服器環境變數：`LIVE_SHEETS_BRIDGE_URL`（Google 提供的 `/exec` URL）、`LIVE_SHEETS_BRIDGE_SECRET`、`LIVE_SHEETS_INTAKE_ENABLED=true`。均不可使用 `NEXT_PUBLIC_`。
 5. 先以隔離測試表驗證一次寫入、超時後重試不重複、錯誤簽章拒絕、關閉功能旗標拒絕。之後才接上網站表單與 Google 登入管理端；正式資料與正式部署另行驗收。
-6. `LIVE_ADMIN_AUTH_ENABLED=true` 僅設定於此功能分支 Preview。登入回傳位置採固定允許清單，Google `Session.getActiveUser().getEmail()` 必須是 Max 本人；無法辨識或其他帳號一律拒絕。60 秒簽章回執經 HttpOnly 隨機 state cookie 驗證後，換成 12 小時 HttpOnly、SameSite=Lax、HTTPS Secure 管理工作階段。`getEffectiveUser()` 不可用於授權。
+6. 管理端需 `LIVE_ADMIN_AUTH_ENABLED=true`。登入回傳位置採固定允許清單，Google `Session.getActiveUser().getEmail()` 必須是 Max 本人；無法辨識或其他帳號一律拒絕。60 秒簽章回執經 HttpOnly 隨機 state cookie 驗證後，換成 12 小時 HttpOnly、SameSite=Lax、HTTPS Secure 工作階段。`getEffectiveUser()` 不可用於授權。
 
-目前 Google 橋接器部署、Preview 環境設定與真實收件測試已完成。原始紀錄有清楚標記為「系統測試」的驗收資料，尚無真實觀眾留言。先前另建的待啟用空表不作為串接目標。密鑰、私人檔案 ID 與部署端點僅存於擁有者設定及伺服器環境，不能提交至公開儲存庫。
+目前 Google 橋接器、真實收件與本人登入均已驗證，並已設定正式入口的明確開關。原始紀錄有清楚標示的系統測試，尚無真實觀眾留言；先前另建空表不作為串接目標。密鑰、私人檔案 ID 及端點僅存於擁有者設定／伺服器環境，不提交公開儲存庫。
 
 ## 後續一致性要求
 
@@ -56,4 +56,14 @@ node --experimental-strip-types --test src/lib/live/intake.test.mjs src/lib/live
 
 官方參考：[Apps Script Web Apps](https://developers.google.com/apps-script/guides/web)、[LockService](https://developers.google.com/apps-script/reference/lock/lock-service)。
 
-登入依據：[Session 的 active user 與 effective user 差異](https://developers.google.com/apps-script/reference/base/session)。此版本為單一擁有者的 Google Apps Script 身分驗證，不是多使用者 Google OAuth 產品。正式解除 Preview 保護前仍須完成公開流量、通知及訂閱驗收。
+登入依據：[Session 的 active user 與 effective user 差異](https://developers.google.com/apps-script/reference/base/session)。此版本為單一擁有者驗證。Preview 保留 Vercel 保護，正式自訂網域對觀眾公開，私人 API 始終需本人登入。
+
+## 通知服務
+
+`MailBridge.gs` 部署於獨立 Google 專案，只需 MailApp 寄信權限，不讀取 Gmail 收件匣。已完成程式、分離密鑰與測試；Google 目前要求新增寄信權限，正在等待具體確認，尚未寄出任何通知。
+
+授權完成後才設定伺服器 `LIVE_EMAIL_BRIDGE_URL`，並在資料橋接器指令碼屬性啟用 `LIVE_NOTIFICATIONS_ENABLED=true`。佇列在同檔案 `LIVE 通知佇列`，只記 ID 與狀態；原始留言及 Email 不複製進佇列。Next.js `after` 在回應後處理寄送，可見管理頁有待寄通知時也會處理。
+
+新提交提醒 Max；發布歌單時通知有 Email 的點歌者，沒有 Email 則建立 IG 人工狀態。寄送不明不自動重寄，額度不足保留至至少 24 小時後再嘗試。沒有事件且管理頁未開啟時不保證背景排程會執行，管理者可按「處理待寄通知」。刪除／匿名化會取消相關尚未完成通知。
+
+官方依據：[MailApp 的權限與剩餘額度](https://developers.google.com/apps-script/reference/mail/mail-app)。

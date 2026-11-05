@@ -1,8 +1,8 @@
 # Maxupport LIVE｜規格與 Preview 索引
 
-> 狀態：第二階段互動 Demo（尚未正式上線）
+> 狀態：真實收件與本人管理已驗證；正式入口部署中，Email 待 Google 新權限確認
 > 分支：`feature/maxupport-live`
-> 更新日期：2026-11-05
+> 更新日期：2026-11-06
 
 ## 專案一句話
 
@@ -19,6 +19,7 @@ Maxupport LIVE 是生涯擺渡人 Max 的單人、單一場次序列街頭演出
 - [待第二階段設定的項目](./OPEN_ITEMS.md)
 - [第二階段 Demo 操作與驗證](./PREVIEW.md)
 - [Google Sheet 即時收件方案與啟用進度](./SHEETS_SYNC.md)
+- [管理操作手冊](./OPERATOR_GUIDE.md)
 
 ## 歌曲資料來源
 
@@ -30,4 +31,4 @@ Maxupport LIVE 是生涯擺渡人 Max 的單人、單一場次序列街頭演出
 
 ## 範圍界線
 
-第一階段規格已完成，使用者已授權開始第二階段網頁開發。目前新增 `/live` 與 `/live/admin` 的獨立 Demo，資料只放在目前分頁的記憶體；未串接正式資料庫、Google 登入、訂閱或通知服務。既有首頁、服務頁、部落格與選單不變；正式網域上線仍待確認。`la-cozzi-website/` 是既有重複子專案，本功能不在其中實作。
+`/live` 與 `/live/admin` 已接上真實私人 Sheet、本人 Google 登入、保存、分類、歌單與手動場次切換。未設定服務的本機仍可使用獨立 Demo。Email 程式及佇列已通過測試，但 Google 新寄信權限尚待確認；訂閱由現有 Google 表單完成最後一步。正式入口採明確開關部署，main 分支及既有網站頁面程式不變。

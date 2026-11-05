@@ -57,7 +57,7 @@ export function parseIntake(value: unknown): Intake {
     throw new Error("互動主題不正確。");
   if (data.replyConsent !== true || data.consentVersion !== replyConsentVersion)
     throw new Error("請確認本次回覆同意。");
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+  if (email && !/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(email))
     throw new Error("請填寫有效的 Email。");
   if (["提問", "聯絡"].includes(kind) && !email && !instagram)
     throw new Error("請留下 Email 或 Instagram。");

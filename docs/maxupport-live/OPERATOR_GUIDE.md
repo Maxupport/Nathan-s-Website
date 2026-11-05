@@ -2,10 +2,11 @@
 
 ## 進入方式
 
-目前功能部署在獨立分支的 Vercel Preview，正式 `maxupport.space` 與既有服務／部落格維持原狀。
+程式保留在獨立分支及 Draft PR；正式入口由功能分支提交部署，既有首頁、服務及部落格程式不改動。
 
-- 觀眾頁：Preview 網址的 `/live`。
-- 私人後台：同一個網址的 `/live/admin`。
+- 觀眾頁：<https://www.maxupport.space/live>。
+- 私人後台：<https://www.maxupport.space/live/admin>。
+- `maxupport.space/live` 會轉到 www 網址；原網站選單沒有新增 LIVE 入口，可直接開啟或掃 QR。
 - 登入時使用 Max 的 Google 帳號；Google 確認本人後，點「返回管理端」。工作階段有效 12 小時，可隨時登出。
 - Google Sheet 直接作為資料來源；使用你原本持有的私人檔案連結，不需公開分享。
 
@@ -31,8 +32,8 @@
 ## 仍在完成的部分
 
 - Email 自動收件提醒及排入演出通知尚未啟用；畫面不能視為已寄送。IG 仍由 Max 手動聯繫。
-- 訂閱表單目前記錄獨立同意與意願，尚未完成既有文章／小說訂閱流程，不會宣稱已建立訂閱。
-- 正式網域入口、解除 Preview 存取保護、QR 碼更換及實際 iPhone Safari 驗收尚待最後上線檢查。
+- 訂閱成功頁可前往既有 Google 表單完成最後一步；保存意願不等於已建立訂閱或啟用文章／小說分眾。
+- 易拉展圖檔尚未更換 QR，實際 iPhone Safari 仍待實機驗收。
 - 原始紀錄中有標示清楚的系統測試資料，可在管理端自行刪除；沒有真實觀眾資料。
 
 ## 開發驗證
@@ -45,3 +46,5 @@ npm run build
 ```
 
 既有網站範圍的 lint 與相依套件問題仍拆開處理，不混入 LIVE 變更。`allowImportingTsExtensions` 僅讓無編譯輸出的 TypeScript 檢查與 Node 原生測試共用模組，不改變網站執行方式。
+
+Production 需設定 `LIVE_RELEASE_ENABLED=true` 才開放 LIVE；Preview 保留存取保護。main 尚未合併本 PR，後續重新部署 main 會覆蓋功能分支的正式版本；Sheet 資料不受影響。

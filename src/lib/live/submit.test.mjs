@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { submitInteraction } from "./submit.ts";
+import { submitInteraction, SubmissionError } from "./submit.ts";
 
 test("browser accepts only a confirmed matching receipt", async () => {
   const payload = { id: "fixed-retry-id", message: "test" };
@@ -18,6 +18,23 @@ test("browser accepts only a confirmed matching receipt", async () => {
     new Response("<html>Login required</html>"),
   ])
     await assert.rejects(submitInteraction(payload, async () => response));
+});
+test("definitive validation rejection permits editing while uncertain writes retain the attempt", async () => {
+  await assert.rejects(
+    submitInteraction({ id: "test" }, async () =>
+      Response.json({ error: "請填寫有效的 Email。" }, { status: 400 }),
+    ),
+    (error) =>
+      error instanceof SubmissionError &&
+      !error.retryable &&
+      error.message.includes("Email"),
+  );
+  await assert.rejects(
+    submitInteraction({ id: "test" }, async () =>
+      Response.json({ error: "upstream unavailable" }, { status: 503 }),
+    ),
+    (error) => error instanceof SubmissionError && error.retryable,
+  );
 });
 
 test("a lost response can retry the same immutable payload", async () => {

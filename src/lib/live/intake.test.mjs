@@ -23,6 +23,8 @@ test("intake validates consent and contact, strips arbitrary fields and never ac
     { replyConsent: false },
     { consentVersion: "wrong" },
     { email: "" },
+    { email: "one@example.com,two@example.com" },
+    { email: "one@example.com;two@example.com" },
     { topic: "unknown" },
     { message: "x".repeat(2001) },
     { events: [{ name: "keystroke", at: "2026-11-05T13:00:00Z" }] },

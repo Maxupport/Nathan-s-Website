@@ -95,7 +95,7 @@ function Setlist({ show }: { show: Show }) {
 }
 
 export default function LivePublic() {
-  const { shows: demoShows, intakeEnabled, managed } = useLive();
+  const { shows: demoShows, intakeEnabled, managed, preview } = useLive();
   const [publicShows, setPublicShows] = useState<Show[]>([]);
   const shows = managed ? publicShows : demoShows;
   const [showError, setShowError] = useState("");
@@ -109,7 +109,7 @@ export default function LivePublic() {
       pending = true;
       try {
         const response = await fetch("/api/live/shows", {
-          cache: "no-store",
+          cache: "default",
           signal: AbortSignal.timeout(30000),
         });
         if (!response.ok) throw new Error();
@@ -146,11 +146,13 @@ export default function LivePublic() {
     <>
       <div className="live-arrival">
         <div className="live-demo-bar">
-          {intakeEnabled
-            ? managed
-              ? "PREVIEW · 表單與演出資訊已連接 Google Sheet。"
-              : "PREVIEW · 表單已連接私人 Google Sheet；演出資訊仍為示例。"
-            : "PREVIEW · 體驗版，請使用測試資料；重新整理會重設。"}
+          {!preview
+            ? "MAXUPPORT LIVE · 一首歌，一段相遇。"
+            : intakeEnabled
+              ? managed
+                ? "PREVIEW · 表單與演出資訊已連接 Google Sheet。"
+                : "PREVIEW · 表單已連接私人 Google Sheet；演出資訊仍為示例。"
+              : "PREVIEW · 體驗版，請使用測試資料；重新整理會重設。"}
           <Link href="/live/admin">
             {managed ? "Max 管理端" : "管理端 Demo"} <ArrowUpRight size={13} />
           </Link>

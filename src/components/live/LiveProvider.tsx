@@ -20,6 +20,7 @@ import { changesSince, type AdminState } from "@/lib/live/admin-state";
 
 type Store = {
   intakeEnabled: boolean;
+  preview: boolean;
   managed: boolean;
   loaded: boolean;
   saving: boolean;
@@ -39,10 +40,12 @@ export default function LiveProvider({
   children,
   intakeEnabled = false,
   managed = false,
+  preview = true,
 }: {
   children: React.ReactNode;
   intakeEnabled?: boolean;
   managed?: boolean;
+  preview?: boolean;
 }) {
   const [songs, rawSetSongs] = useState<Song[]>(managed ? [] : demoSongs);
   const [shows, rawSetShows] = useState<Show[]>(managed ? [] : initialShows);
@@ -84,6 +87,11 @@ export default function LiveProvider({
       });
       if (response.status === 401) {
         setSyncMessage("登入已過期，請重新登入。");
+        rawSetSubmissions([]);
+        rawSetSongs([]);
+        rawSetShows([]);
+        setBaseline(null);
+        location.replace("/live/admin");
         return;
       }
       if (!response.ok) throw new Error();
@@ -176,6 +184,7 @@ export default function LiveProvider({
     <Context.Provider
       value={{
         intakeEnabled,
+        preview,
         managed,
         loaded: !managed || Boolean(baseline),
         saving,

@@ -1,6 +1,6 @@
 # Preview 操作與驗證
 
-最新操作方式見 [管理操作手冊](./OPERATOR_GUIDE.md)。目前功能分支已啟用本人 Google 登入與同一份私人 Sheet 的收件、歌庫及場次保存；沒有設定環境變數的本機才使用獨立 Demo。
+最新操作方式及正式入口見 [管理操作手冊](./OPERATOR_GUIDE.md)。功能分支已啟用本人 Google 登入與同一份私人 Sheet 的收件、歌庫及場次保存；沒有設定環境變數的本機才使用獨立 Demo。
 
 ## 目前可操作
 
@@ -16,7 +16,7 @@
 - 已啟用的 Preview 管理端需按「儲存修改」保存，重新整理可讀回。未設定串接的 Demo 仍只保留在目前分頁記憶體。
 - 功能分支 Preview 已設定 Google Sheet 收件。新版表單收到保存回執才顯示成功，送出內容與操作事件會保留在擁有者私人試算表。未設定環境變數的本機仍為純 Demo。請使用明確標示的測試資料；目前無 Email 寄送或正式訂閱。
 - 已新增本人 Google 登入及受保護的私人管理 API；Preview 另保留既有 Vercel 存取保護。
-- Vercel 的 `production` 環境對 `/live` 與所有子路由回傳 404；只有本機／Preview 可用。解除保護、串接真實服務與 Production 部署是後續里程碑。
+- Production 預設不開放 LIVE；經授權的正式部署需 `LIVE_RELEASE_ENABLED=true`，功能分支 Preview 保留既有存取保護。
 - 所有新增 CSS 限定於 LIVE 路由的 `.max-live` 元素內；既有全站 layout、選單與服務／部落格程式未更動。
 
 ## 建議操作順序
@@ -49,3 +49,5 @@ node --experimental-strip-types --test src/lib/live/model.test.mjs
 ## 下一個里程碑
 
 接續完成 Email 通知、既有訂閱流程、公開流量及正式入口驗收。目前既有聯絡頁的訂閱使用 Google Forms；正式整合前須確認文章／小說的實際訂閱目標與回傳成功狀態，避免複製既有未驗證成功的表單行為。
+
+最新：35 項測試及完整建置通過。通知程式已完成，待 Google 新寄信權限確認；成功頁已連回既有 Google 訂閱表單，由觀眾在原表單完成最後一步。320×568 直向與 844×390 橫向均確認六入口完整顯示、順序正確、沒有水平溢出。

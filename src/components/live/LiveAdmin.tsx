@@ -24,6 +24,7 @@ import {
   previousIds,
   warnings,
   transitionShow,
+  songKey,
   type Mode,
   type Show,
   type Slot,
@@ -124,8 +125,7 @@ export default function LiveAdmin() {
         s.kind === "點歌" &&
         items.some(
           (i) =>
-            i.song.title.trim() === s.title.trim() &&
-            i.song.artist.trim() === s.artist.trim(),
+            songKey(i.song.title, i.song.artist) === songKey(s.title, s.artist),
         )
           ? {
               ...s,
@@ -305,7 +305,7 @@ export default function LiveAdmin() {
             <h1>{tabs.find((t) => t.key === tab)?.label}</h1>
           </div>
           <Link href="/live" className="live-button secondary">
-            觀眾頁 Preview <ArrowUpRight size={16} />
+            觀眾頁 <ArrowUpRight size={16} />
           </Link>
         </header>
         <div role="status" aria-live="polite">
@@ -554,7 +554,9 @@ export default function LiveAdmin() {
                           value={replacement}
                           onChange={(e) => setReplacement(e.target.value)}
                         >
-                          <option value="">{managed ? "選擇歌曲" : "選擇示例歌曲"}</option>
+                          <option value="">
+                            {managed ? "選擇歌曲" : "選擇示例歌曲"}
+                          </option>
                           {songs.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.title} — {s.artist}
@@ -694,7 +696,9 @@ export default function LiveAdmin() {
                           );
                           setShows(updated);
                           setNotice(
-                            "已開始本場演出，觀眾頁會優先顯示本場歌單；可繼續發布下一場預告。",
+                            managed
+                              ? "已準備開始本場演出；請儲存修改後公開。可繼續發布下一場預告。"
+                              : "已開始本場演出，觀眾頁會優先顯示本場歌單；可繼續發布下一場預告。",
                           );
                         } catch (error) {
                           setNotice((error as Error).message);
@@ -716,7 +720,9 @@ export default function LiveAdmin() {
                           setShows(transitionShow(shows, show.id, "finish"));
                           setConfirmComplete(false);
                           setNotice(
-                            "這場已移到上一場歌單。請選擇下一份草稿發布新預告。",
+                            managed
+                              ? "已準備將此場移入上一場；請儲存修改。"
+                              : "這場已移到上一場歌單。請選擇下一份草稿發布新預告。",
                           );
                         }}
                       >
@@ -894,6 +900,24 @@ export default function LiveAdmin() {
                   <Download size={16} />
                   CSV 匯出
                 </button>
+                {managed && (
+                  <button
+                    className="live-button secondary"
+                    onClick={async () => {
+                      const response = await fetch(
+                        "/api/live/admin/notifications",
+                        { method: "POST" },
+                      );
+                      setNotice(
+                        response.ok
+                          ? "已開始處理待寄通知，實際結果請查看通知狀態。"
+                          : "通知服務尚未啟用或暫時無法處理，請稍後再試。",
+                      );
+                    }}
+                  >
+                    處理待寄通知
+                  </button>
+                )}
                 <button
                   className="live-button secondary"
                   disabled={!submissions.length}
@@ -966,7 +990,7 @@ export default function LiveAdmin() {
                       回覆已同意{s.subscriptionConsent ? " · 訂閱另行同意" : ""}{" "}
                       · {s.notification}
                       {s.kind === "點歌"
-                        ? ` · 同曲 ${submissions.filter((other) => other.kind === "點歌" && other.title.trim() === s.title.trim() && other.artist.trim() === s.artist.trim()).length} 次`
+                        ? ` · 同曲 ${submissions.filter((other) => other.kind === "點歌" && songKey(other.title, other.artist) === songKey(s.title, s.artist)).length} 次`
                         : ""}
                     </p>
                     <div className="live-inline-actions">

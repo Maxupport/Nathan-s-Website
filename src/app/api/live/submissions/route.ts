@@ -1,15 +1,16 @@
 import { parseIntake, writeIntake } from "@/lib/live/intake";
+import { after } from "next/server";
+import { drainNotifications } from "@/lib/live/mail";
+import { liveAvailable } from "@/lib/live/config";
 
 export const runtime = "nodejs";
+export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store" };
 
 export async function POST(request: Request) {
   // Inert until an isolated preview has its write bridge explicitly configured.
-  if (
-    process.env.LIVE_SHEETS_INTAKE_ENABLED !== "true" ||
-    process.env.VERCEL_ENV === "production"
-  )
+  if (process.env.LIVE_SHEETS_INTAKE_ENABLED !== "true" || !liveAvailable())
     return Response.json(
       { error: "互動資料串接尚未啟用。" },
       { status: 503, headers },
@@ -72,6 +73,7 @@ export async function POST(request: Request) {
   }
   try {
     const receipt = await writeIntake(intake, { url, secret });
+    after(() => drainNotifications(1));
     return Response.json(receipt, { status: 201, headers });
   } catch {
     // Do not expose Google responses, payloads or secrets in client errors or logs.

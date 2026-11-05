@@ -1,74 +1,56 @@
 # 系統架構與技術決策
 
-## 1. 現有專案盤點
+## 現有網站邊界
 
-- 框架：Next.js 16.2.1、React 19.2.4、TypeScript、Tailwind CSS 4。
-- 目前沒有可直接沿用的資料庫、管理端登入或 Maxupport LIVE API。
-- 既有網站已在 Vercel，正式環境連到 `main`；功能分支只建立 Preview，不可提升為 Production。
-- 根目錄與 `la-cozzi-website/` 內有重複專案。新功能只在根目錄實作。
-- 現有 lint 有 48 個 errors、9 個 warnings；套件稽核有既存風險。這些是基線技術債，必須另開工作處理，不能混入本功能 PR。
-- 沙箱建置因無法下載 Google Font 而失敗；不是本階段新增程式造成的編譯錯誤。
+根目錄使用 Next.js 16.2.1、React 19.2.4、TypeScript 與 Tailwind CSS 4，沿用既有 Vercel 專案。LIVE 的頁面、元件、API 與 CSS 均獨立；既有首頁、服務、部落格、Notion 流程及選單程式不改動。重複子目錄 `la-cozzi-website/` 不參與實作。
 
-## 2. 建議邏輯架構
+工作留在 `feature/maxupport-live` 與 Draft PR，不推送或合併 main。正式部署可由指定功能分支提交建立；`LIVE_RELEASE_ENABLED=true` 是 Production 的明確開關，未設定時 LIVE 不開放。後續 main 部署仍會使用 main 的程式，合併前需留意覆蓋；Sheet 資料不隨網站版本刪除。
+
+## 資料流
 
 ```text
-iPhone 觀眾
-  -> /live（公開頁）
-  -> Server Actions / Route Handlers（驗證、速率限制、提交）
-  -> 關聯式資料庫（互動、歌曲、場次、歌單、同意、通知紀錄）
+iPhone -> /live -> POST /api/live/submissions
+  -> 同源／內容驗證 -> HMAC 簽章 Apps Script
+  -> 私人 Google Sheet 保存及防重複回執 -> 成功畫面
 
-MacBook Max
-  -> /live/admin（Google 登入 + 帳號白名單）
-  -> 收件匣／歌庫／歌單生成／發布／場次切換／匯出
+MacBook -> /live/admin -> Google active user 本人驗證
+  -> state 綁定短效回執 -> HttpOnly 工作階段
+  -> 私人 API -> 同一份 Sheet 的歌曲、場次及原始互動
 
-通知工作
-  -> Email 提醒 Max
-  -> Email 通知點歌者
-  -> Instagram 待辦（無可靠自動介面時由 Max 手動完成）
+公開演出 -> /api/live/shows -> 已發布場次的明確欄位投影
+通知佇列 -> 獨立 MailApp 寄信服務（待 Google 新權限確認）
+訂閱意願 -> 獨立同意 -> 既有 Google 表單完成最後一步
 ```
 
-## 3. 免費優先策略
+## 第一版主資料來源
 
-更新決策：第一版互動收件改以私人 Google Sheet 作為主資料來源，透過 Next.js 寫入 API 與簽章 Apps Script 橋接；尚未啟用。以下 PostgreSQL 選項保留作為未來資料量或並行需求提高時的替代，詳細實作與授權前置見 [SHEETS_SYNC.md](./SHEETS_SYNC.md)。
+歌曲、分類、影片來源、原始互動、彙總與場次集中在同一份私人 Google Sheet。網站不另建資料庫，也不公開整張表。PostgreSQL 僅為未來資料量或並行需求提高時的替代方案。
 
-第二階段先用以下順序做決策，且在使用者確認前不建立任何外部服務：
+- 歌曲編輯只更新目標列 A:H，不覆蓋 Kala、來源及備註；M 欄為同歌點歌次數的衍生統計。
+- 原始提交以 UUID 識別，鎖定後防並行重複；同 ID 重試回傳原保存時間。
+- 已發布歌單保存歌曲快照；本場、下一場、上一場由 Max 手動切換。
+- 歌庫與場次使用版本雜湊，手動改 Sheet 後舊版本不能覆蓋。原始互動依指定 ID 修改，不整表取代。
+- 管理頁可見時每 5 秒輪詢；公開頁每 15 秒更新，公開回應另有短期 CDN 快取，屬近即時更新。
+- 多個 Sheet 範圍不是資料庫交易；寫入中途失敗須重新載入檢查，不宣稱全部成功。
 
-1. **本機開發**：本機環境與測試資料完全免費，所有 schema／migration 可重建。
-2. **Vercel Preview**：沿用既有專案的功能分支 Preview；僅 Max 登入查看管理端 Demo。
-3. **正式資料層**：選擇可從 Vercel 安全連線、具免費額度的託管 PostgreSQL；在採用前再次核對當時額度、休眠、備份與超額計費規則。
-4. **Email**：先選有免費額度且支援交易郵件的服務；若尚未配置，Preview 顯示可稽核的模擬寄送狀態，不宣稱已送達。
-5. 不因追求免費而把個資放進 Git、公開 JSON、瀏覽器 localStorage 或公開 Google Sheet。
+## 身分與隱私
 
-## 4. 路由邊界
+只接受 `Session.getActiveUser()` 的本人帳號，不能用 `getEffectiveUser()` 代替訪客身分。回傳位置採固定允許清單，60 秒證明須符合 HttpOnly 隨機 state cookie，再換成 12 小時 HttpOnly、SameSite=Lax、HTTPS Secure 工作階段。私人 API 每次重新驗證，登出與過期後清除管理資料。
 
-預計新增：
+公開 API 不回傳私人檔案 ID、原始留言、聯絡方式或未發布草稿。密鑰僅存於伺服器／Google 指令碼屬性，不使用 `NEXT_PUBLIC_`。個資不進一般 log、Git 或 localStorage。
 
-- `/live`：公開頁。
-- `/live/thanks`：提交完成與下一步。
-- `/live/admin/*`：受保護管理端。
-- `/api/live/*` 或對應 Server Actions：只處理 Maxupport LIVE。
+表單只保存正式提交及四種操作事件，不追蹤 IP、指紋、逐字輸入或未提交草稿。單次回覆與訂閱同意分開；超時保留原嘗試，明確輸入拒絕則允許修改。CSV 對公式前綴跳脫。
 
-既有首頁、服務頁、部落格、Notion 內容流程及既有訂閱 API 不改動；訂閱分支只透過明確介面呼叫既有流程。
+## 通知與訂閱
 
-## 5. 安全與隱私
+通知佇列只存提交／場次 ID 及狀態，不複製聯絡資料或原始留言。新提交提醒 Max；歌曲發布時依歌名與歌手合併比對，再通知有 Email 的點歌者。IG 留作人工待辦。
 
-- 管理端同時要求 Google 身分驗證與指定 Email 白名單，不能只靠「知道網址」。
-- 所有管理查詢與修改都在伺服器再次授權。
-- 表單採 allowlist schema、長度限制、蜜罐、IP／指紋節流與一致的錯誤回應。
-- Email、IG、同意及訊息內容不得進入前端分析事件或應用程式一般 log。
-- CSV 匯出屬敏感操作，需伺服器授權並留下稽核事件。
-- 單筆刪除與批次匿名化需二次確認；匿名化後不可透過一般管理 UI 還原個資。
+寄信專案只使用 MailApp，不能讀取 Gmail 收件匣；採分離衍生密鑰與簽章。結果不明時標示需人工確認，不盲目重寄；額度不足保留狀態。授權未完成前不設定寄信端點、不宣稱已寄送。
 
-## 6. PWA／現場穩定性
+訂閱成功頁連到現有 Google 表單；LIVE 保存意願與偏好不等於完成原表單或啟用文章／小說分眾，不複製既有網站以固定延遲宣稱成功的行為。
 
-- 公開頁以弱網路與 iPhone Safari 測試，優先小體積、清楚狀態與可重試提交。
-- 不快取含個資的回應，也不在離線佇列保存互動內容。
-- 下一場預告可快取公開唯讀資料；發布或切換場次後主動 revalidate。
-- 表單提交使用 idempotency key，避免現場網路重送造成重複資料；相同歌曲統計合併仍由後端處理。
+## 驗證與技術債
 
-## 7. Next.js 16 實作約束
+執行 Node 原生測試、TypeScript、LIVE 範圍 ESLint、完整建置及瀏覽器端到端驗證。實際 iPhone Safari 與真實寄信仍需分別驗收。
 
-- 預設使用 Server Components；只有表單互動、拖曳排序等必要區塊使用 Client Components。
-- Route Handlers／Server Actions 必須在資料讀寫前做驗證與授權。
-- 環境變數僅伺服器端使用，除非明確屬公開設定，否則不得以 `NEXT_PUBLIC_` 暴露。
-- 實作前依 `AGENTS.md` 重新查閱安裝版本的 Next.js 文件，避免套用舊版 API。
+既有全站 lint 的 48 errors／9 warnings 與套件稽核問題屬基線技術債，依使用者決定拆開處理。實作遵循 `AGENTS.md` 及已安裝 Next.js 16 文件。

@@ -1,14 +1,10 @@
-import { signBridgePayload } from "./intake";
+import { signBridgePayload } from "./intake.ts";
+import { liveAvailable } from "./config.ts";
 
 export async function callBridge(request: Record<string, unknown>) {
   const endpoint = process.env.LIVE_SHEETS_BRIDGE_URL,
     secret = process.env.LIVE_SHEETS_BRIDGE_SECRET;
-  if (
-    !endpoint ||
-    !secret ||
-    secret.length < 32 ||
-    process.env.VERCEL_ENV === "production"
-  )
+  if (!endpoint || !secret || secret.length < 32 || !liveAvailable())
     throw new Error("未設定資料串接。");
   const url = new URL(endpoint);
   if (

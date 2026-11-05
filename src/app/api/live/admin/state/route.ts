@@ -1,7 +1,10 @@
 import { isOwner } from "@/lib/live/auth";
 import { callBridge } from "@/lib/live/bridge";
 import { decodeAdmin, parseChanges } from "@/lib/live/admin-state";
+import { after } from "next/server";
+import { drainNotifications } from "@/lib/live/mail";
 export const runtime = "nodejs";
+export const maxDuration = 120;
 const headers = { "Cache-Control": "no-store" };
 export async function GET() {
   if (!(await isOwner()))
@@ -12,6 +15,8 @@ export async function GET() {
   try {
     const result = await callBridge({ operation: "adminRead" });
     if (result.ok !== true) throw new Error();
+    if (result.notificationsPending === true)
+      after(() => drainNotifications(1));
     return Response.json(decodeAdmin(result), { headers });
   } catch {
     return Response.json(
@@ -66,6 +71,7 @@ export async function PUT(request: Request) {
       );
     if (result.ok !== true || typeof result.revision !== "string")
       throw new Error();
+    after(() => drainNotifications());
     return Response.json({ ok: true, revision: result.revision }, { headers });
   } catch {
     return Response.json(
