@@ -33,9 +33,17 @@ export type Show = {
   overrideWarnings: string[];
 };
 export type Kind = "點歌" | "提問" | "訂閱" | "聯絡" | "鼓勵";
+export const conversationTopics = [
+  "人生職涯",
+  "聲音優化",
+  "創業想法",
+  "保險評估",
+] as const;
+export type ConversationTopic = (typeof conversationTopics)[number];
 export type Submission = {
   id: string;
   kind: Kind;
+  topic?: ConversationTopic;
   nickname: string;
   email: string;
   instagram: string;

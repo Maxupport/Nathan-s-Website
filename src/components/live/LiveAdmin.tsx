@@ -156,6 +156,7 @@ export default function LiveAdmin() {
     const rows = [
       [
         "類型",
+        "聊聊主題",
         "暱稱",
         "Email",
         "Instagram",
@@ -170,6 +171,7 @@ export default function LiveAdmin() {
       ],
       ...submissions.map((s) => [
         s.kind,
+        s.topic ?? "",
         s.nickname,
         s.email,
         s.instagram,
@@ -812,7 +814,9 @@ export default function LiveAdmin() {
                 {submissions.map((s) => (
                   <article className="live-panel" key={s.id}>
                     <div className="live-panel-heading">
-                      <span className="live-pill">{s.kind}</span>
+                      <span className="live-pill">
+                        {s.topic ?? (s.kind === "鼓勵" ? "跟我說話" : s.kind)}
+                      </span>
                       <small>
                         {new Date(s.createdAt).toLocaleString("zh-TW", {
                           timeZone: "Asia/Taipei",

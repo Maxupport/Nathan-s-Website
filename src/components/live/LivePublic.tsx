@@ -5,57 +5,59 @@ import {
   ArrowDown,
   ArrowUpRight,
   CalendarDays,
-  Check,
   ChevronRight,
   Heart,
   MapPin,
   MessageCircle,
   Mic2,
   Music2,
-  Send,
+  Compass,
+  Lightbulb,
+  Shield,
   Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import { useLive } from "./LiveProvider";
 import InteractionForm from "./InteractionForm";
-import type { Kind, Show } from "@/lib/live/model";
+import type { ConversationTopic, Kind, Show } from "@/lib/live/model";
 
-export const interactions = [
+const entrances: Array<{
+  title: string;
+  kind: Kind;
+  topic?: ConversationTopic;
+  icon: typeof Music2;
+  color: string;
+}> = [
   {
-    kind: "點歌" as Kind,
-    title: "這首，想聽你唱",
-    copy: "把歌名和演唱者留給我。",
-    icon: Music2,
+    title: "人生職涯",
+    kind: "提問",
+    topic: "人生職涯",
+    icon: Compass,
     color: "green",
   },
   {
-    kind: "提問" as Kind,
-    title: "有件事，想問問",
-    copy: "關於生活，或卡住的選擇。",
-    icon: MessageCircle,
+    title: "聲音優化",
+    kind: "提問",
+    topic: "聲音優化",
+    icon: Mic2,
     color: "blue",
   },
   {
-    kind: "訂閱" as Kind,
-    title: "故事，繼續讀下去",
-    copy: "收到我的文章與小說更新。",
-    icon: Send,
+    title: "創業想法",
+    kind: "提問",
+    topic: "創業想法",
+    icon: Lightbulb,
     color: "peach",
   },
   {
-    kind: "聯絡" as Kind,
-    title: "找個時間聊聊",
-    copy: "聊聊你的想法，或合作邀約。",
-    icon: Mic2,
+    title: "保險評估",
+    kind: "提問",
+    topic: "保險評估",
+    icon: Shield,
     color: "sand",
   },
-  {
-    kind: "鼓勵" as Kind,
-    title: "留一句，給 Max",
-    copy: "你的話，我會好好收著。",
-    icon: Heart,
-    color: "rose",
-  },
+  { title: "點歌", kind: "點歌", icon: Music2, color: "green" },
+  { title: "跟我說話", kind: "鼓勵", icon: MessageCircle, color: "rose" },
 ];
 
 function Setlist({ show }: { show: Show }) {
@@ -78,6 +80,7 @@ function Setlist({ show }: { show: Show }) {
 export default function LivePublic() {
   const { shows } = useLive();
   const [kind, setKind] = useState<Kind | null>(null);
+  const [topic, setTopic] = useState<ConversationTopic | undefined>();
   const [completed, setCompleted] = useState(false);
   const next = shows.find((s) => s.status === "next");
   const previous = shows
@@ -85,38 +88,101 @@ export default function LivePublic() {
     .sort((a, b) => b.sequence - a.sequence)[0];
   return (
     <>
-      <div className="live-demo-bar">
-        PREVIEW · 體驗版，請使用測試資料；重新整理會重設。
-        <Link href="/live/admin">
-          管理端 Demo <ArrowUpRight size={13} />
-        </Link>
+      <div className="live-arrival">
+        <div className="live-demo-bar">
+          PREVIEW · 體驗版，請使用測試資料；重新整理會重設。
+          <Link href="/live/admin">
+            管理端 Demo <ArrowUpRight size={13} />
+          </Link>
+        </div>
+        <header className="live-header live-container">
+          <Link href="/live" className="live-logo">
+            Maxupport
+            <span>
+              LIVE
+              <span className="live-dot" />
+            </span>
+          </Link>
+          <nav aria-label="頁面導覽">
+            <a href="#shows">演出歌單</a>
+            <a href="#interact">
+              留首歌・留句話 <ArrowUpRight size={15} />
+            </a>
+          </nav>
+        </header>
+        <section
+          id="interact"
+          className="live-entry live-container"
+          aria-labelledby="live-entry-title"
+        >
+          <div className="live-entry-heading">
+            <p className="live-eyebrow">
+              生涯擺渡人 MAX / 街頭唱歌，也陪你整理想法
+            </p>
+            <h1 id="live-entry-title">今天，想和我聊什麼？</h1>
+            <p>選一個主題，或留一首你想聽的歌。</p>
+            <p className="live-orientation-hint">
+              ↔ 建議橫向使用，直向也可完整操作。
+            </p>
+          </div>
+          <div className="live-entry-grid">
+            {entrances.map(
+              ({
+                title,
+                kind: entryKind,
+                topic: entryTopic,
+                icon: Icon,
+                color,
+              }) => (
+                <button
+                  type="button"
+                  className={`live-entry-button ${color}`}
+                  key={title}
+                  onClick={() => {
+                    setCompleted(false);
+                    setTopic(entryTopic);
+                    setKind(entryKind);
+                  }}
+                >
+                  <Icon size={30} strokeWidth={1.6} aria-hidden="true" />
+                  <span>{title}</span>
+                  <ArrowUpRight
+                    size={20}
+                    className="live-entry-arrow"
+                    aria-hidden="true"
+                  />
+                </button>
+              ),
+            )}
+          </div>
+          <div className="live-entry-links">
+            <a href="#shows">
+              演出預告與歌單 <ArrowDown size={16} />
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                setCompleted(false);
+                setTopic(undefined);
+                setKind("訂閱");
+              }}
+            >
+              訂閱文章／小說 <ArrowUpRight size={16} />
+            </button>
+          </div>
+        </section>
       </div>
-      <header className="live-header live-container">
-        <Link href="/live" className="live-logo">
-          Maxupport
-          <span>
-            LIVE
-            <span className="live-dot" />
-          </span>
-        </Link>
-        <nav aria-label="頁面導覽">
-          <a href="#shows">演出歌單</a>
-          <a href="#interact">
-            留首歌・留句話 <ArrowUpRight size={15} />
-          </a>
-        </nav>
-      </header>
       <main>
         <section className="live-hero live-container">
           <div className="live-hero-copy">
             <p className="live-eyebrow">
               <span className="live-dot" /> SOMEWHERE, A SONG CONNECTS US
             </p>
-            <h1>
+            <h2>
               在人生的街角，
               <br />
               唱一首<span className="live-handline">你的歌。</span>
-            </h1>
+            </h2>
             <p className="live-intro">
               嗨，我是 Max。
               <br />
@@ -177,54 +243,6 @@ export default function LivePublic() {
           <span>A LITTLE MUSIC, A LITTLE CONNECTION</span>
           <span>✳</span>
         </div>
-        <section id="interact" className="live-section live-container">
-          <div className="live-section-heading">
-            <div>
-              <p className="live-eyebrow">01 / A LITTLE CONNECTION</p>
-              <h2>今天，想留下什麼？</h2>
-            </div>
-            <p>
-              一首歌、一個問題，或只是打聲招呼。
-              <br />
-              我都會好好看。
-            </p>
-          </div>
-          <div className="live-interactions">
-            {interactions.map(
-              ({ kind: k, title, copy, icon: Icon, color }, index) => (
-                <button
-                  type="button"
-                  key={k}
-                  className={`live-interaction ${color}`}
-                  onClick={() => {
-                    setCompleted(false);
-                    setKind(k);
-                  }}
-                >
-                  <span className="live-card-top">
-                    <Icon size={26} strokeWidth={1.6} />
-                    <span>0{index + 1}</span>
-                  </span>
-                  <h3>{title}</h3>
-                  <p>{copy}</p>
-                  <span className="live-card-bottom">
-                    {k}
-                    <ArrowUpRight size={21} />
-                  </span>
-                </button>
-              ),
-            )}
-          </div>
-          <div className="live-promise">
-            <Check size={19} />
-            <p>
-              你點的歌，我會唱。
-              <span>
-                不一定是這一場，有些歌需要一點練習時間；沒有期限，但我會盡快安排。
-              </span>
-            </p>
-          </div>
-        </section>
         <section id="shows" className="live-shows">
           <div className="live-container live-section">
             <div className="live-section-heading">
@@ -325,7 +343,7 @@ export default function LivePublic() {
           </div>
           <div>
             <p>
-              職涯困境、人生停滯、創業想法、保單健診，
+              人生職涯、聲音優化、創業想法、保險評估，
               <br />
               或一個還沒有形狀的合作邀約。
             </p>
@@ -351,6 +369,7 @@ export default function LivePublic() {
       {kind && (
         <InteractionForm
           kind={kind}
+          topic={topic}
           completed={completed}
           onClose={() => setKind(null)}
           onComplete={() => setCompleted(true)}

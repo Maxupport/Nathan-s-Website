@@ -3,15 +3,17 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Check, X, ArrowRight } from "lucide-react";
 import { useLive } from "./LiveProvider";
-import type { Kind, Submission } from "@/lib/live/model";
+import type { ConversationTopic, Kind, Submission } from "@/lib/live/model";
 
 export default function InteractionForm({
   kind,
+  topic,
   completed,
   onClose,
   onComplete,
 }: {
   kind: Kind;
+  topic?: ConversationTopic;
   completed: boolean;
   onClose: () => void;
   onComplete: () => void;
@@ -49,6 +51,7 @@ export default function InteractionForm({
     const submission: Submission = {
       id: crypto.randomUUID(),
       kind,
+      topic,
       nickname: get("nickname"),
       email: get("email"),
       instagram: get("instagram"),
@@ -112,17 +115,22 @@ export default function InteractionForm({
           </div>
         ) : (
           <>
-            <p className="live-eyebrow">A LITTLE CONNECTION / {kind}</p>
+            <p className="live-eyebrow">
+              A LITTLE CONNECTION /{" "}
+              {topic ?? (kind === "鼓勵" ? "跟我說話" : kind)}
+            </p>
             <h2 id={titleId}>
-              {kind === "點歌"
-                ? "這次，想聽哪一首？"
-                : kind === "提問"
-                  ? "慢慢說，我在聽。"
-                  : kind === "訂閱"
-                    ? "讓故事，繼續陪你。"
-                    : kind === "聯絡"
-                      ? "從一句你好開始。"
-                      : "謝謝你的這一句。"}
+              {topic
+                ? `聊聊${topic}`
+                : kind === "點歌"
+                  ? "這次，想聽哪一首？"
+                  : kind === "提問"
+                    ? "慢慢說，我在聽。"
+                    : kind === "訂閱"
+                      ? "讓故事，繼續陪你。"
+                      : kind === "聯絡"
+                        ? "從一句你好開始。"
+                        : "有什麼話，都可以說。"}
             </h2>
             <p className="live-muted">
               Demo 體驗，請填測試資料；重新整理後即清除。
@@ -249,7 +257,7 @@ export default function InteractionForm({
                       : kind === "聯絡"
                         ? "想和 Max 聊什麼？"
                         : kind === "鼓勵"
-                          ? "留給 Max 的話"
+                          ? "想跟 Max 說的話"
                           : "還想說點什麼？"}
                     {kind !== "點歌" && <em>必填</em>}
                     <textarea
@@ -279,7 +287,8 @@ export default function InteractionForm({
                     返回
                   </button>
                   <button type="submit" className="live-button">
-                    送出 Demo {kind} <ArrowRight size={17} />
+                    送出 Demo {topic ?? (kind === "鼓勵" ? "留言" : kind)}{" "}
+                    <ArrowRight size={17} />
                   </button>
                 </div>
               </form>

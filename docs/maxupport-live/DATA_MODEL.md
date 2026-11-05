@@ -46,6 +46,7 @@
 |---|---|---|
 | `id` | UUID | 主鍵 |
 | `type` | enum | `song_request`／`question`／`subscription`／`contact`／`encouragement` |
+| `topic` | enum/null | 人生職涯／聲音優化／創業想法／保險評估；由首屏入口帶入 |
 | `nickname` | text/null | 選填 |
 | `email` | text/null | Email、IG 至少一種才可接收回覆 |
 | `instagram_handle` | text/null | 正規化保存，保留原始輸入供稽核 |
