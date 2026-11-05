@@ -21,7 +21,7 @@ Maxupport LIVE 是生涯擺渡人 Max 的單人、單一場次序列街頭演出
 ## 歌曲資料來源
 
 - YouTube 頻道：<https://www.youtube.com/@OLDSONGSCOVEREDstartFrom1980>
-- Google Sheet：<https://docs.google.com/spreadsheets/d/1I6EQsNlt8QbifSrdKctaajMIu_rj5XS_RaOyHA8RE70/edit>
+- Google Sheet：已建立於 Max 的 Google Drive；連結不寫入公開儲存庫，由專案擁有者另行保存。
 - 已匯入 287 支影片；標題含 `kala`（不分大小寫）的 114 支影片已獨立標示並保留網址。
 - 影片解析後彙整為 159 筆歌曲候選。自動解析結果一律標示為待核對，不視為人工確認的歌曲或演唱者資料。
 - 主分類先建立選項、歌曲分類欄保持空白，由 Max 人工分類；次標籤可複選。
