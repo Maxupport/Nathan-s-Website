@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { test } from "node:test";
@@ -93,7 +93,7 @@ function harness(enabled = false) {
     PropertiesService: {
       getScriptProperties: () => ({
         getProperty: (key) =>
-          key === "LIVE_NOTIFICATIONS_ENABLED" && enabled ? "true" : null,
+          key === "LIVE_BRIDGE_SECRET" ? "x".repeat(40) : key === "LIVE_NOTIFICATIONS_ENABLED" && enabled ? "true" : null,
       }),
     },
     Utilities: {
@@ -102,6 +102,7 @@ function harness(enabled = false) {
       computeDigest: (_, text) => [
         ...createHash("sha256").update(text).digest(),
       ],
+      computeHmacSha256Signature: (text, secret) => [...createHmac("sha256", secret).update(text).digest()],
     },
     SpreadsheetApp: { flush: () => {} },
   });
@@ -111,6 +112,13 @@ function harness(enabled = false) {
   return {
     call,
     tables,
+    subscribe: (email, id) => context.liveSubscribe(book, email, id),
+    unsubscribe: (id, token) => context.liveUnsubscribe({id, token}, book),
+    token: (id) => context.liveUnsubscribeToken(id),
+    preference: (email, submissionId, choice, token) => {
+      const receipt = context.livePreferenceReceipt(book, email, submissionId);
+      return context.liveSubscriptionPreference({...receipt, choice, ...(token ? {token} : {})}, book);
+    },
     notification: (request) =>
       JSON.parse(
         JSON.stringify(context.liveNotificationOperation(request, book)),
@@ -138,6 +146,71 @@ test("public projection excludes draft shows and never returns private intake", 
   assert.equal(result.shows[0].email, undefined);
   assert.equal(result.submissions, undefined);
   assert.ok(!JSON.stringify(result).includes("private"));
+});
+test("performance subscription deduplicates email, respects unsubscribe and cannot be revived by an old retry", () => {
+  const h = harness(true);
+  h.subscribe(" Max@Example.com ", "first");
+  const subscriber = h.tables["LIVE 演出訂閱"][1];
+  assert.equal(subscriber[1], "max@example.com");
+  assert.equal(h.unsubscribe(subscriber[0], "wrong").ok, false);
+  assert.equal(h.unsubscribe(subscriber[0], h.token(subscriber[0])).ok, true);
+  assert.equal(subscriber[2], "已取消訂閱");
+  h.subscribe("max@example.com", "first");
+  assert.equal(subscriber[2], "已取消訂閱");
+  h.subscribe("MAX@example.com", "new-consented-submission");
+  assert.equal(h.tables["LIVE 演出訂閱"].length, 2);
+  assert.equal(h.tables["LIVE 演出訂閱"][1][2], "預設接收（未回答）");
+});
+test("post-submit preference distinguishes default delivery, explicit yes and explicit no with a signed receipt", () => {
+  const h = harness(true);
+  h.subscribe("choice@example.com", "request");
+  const row = h.tables["LIVE 演出訂閱"][1];
+  assert.equal(row[2], "預設接收（未回答）");
+  assert.equal(row[3], "live-updates-default-v1");
+  assert.equal(h.preference("choice@example.com", "request", "yes", "bad").ok, false);
+  assert.equal(row[2], "預設接收（未回答）");
+  assert.equal(h.preference("choice@example.com", "request", "yes").ok, true);
+  assert.equal(row[2], "訂閱中");
+  assert.equal(row[3], "live-updates-v1");
+  assert.equal(h.preference("choice@example.com", "request", "no").ok, true);
+  assert.equal(row[2], "不同意");
+  h.subscribe("choice@example.com", "request");
+  assert.equal(row[2], "不同意");
+});
+test("publishing queues one complete announcement per subscriber, never enrolls old contacts or repeats on edits", () => {
+  const h = harness(true);
+  h.subscribe("private@example.com", "raw-1");
+  const show = { id: "announce-show", sequence: 5, status: "next", date: "2026-11-06T18:30", location: "測試街角", copy: "演出預告", items: [{song: {title: "歌", artist: "歌手"}}] };
+  h.tables["互動原始紀錄"][1][2] = "點歌";
+  h.tables["互動原始紀錄"][1][7] = "歌";
+  h.tables["互動原始紀錄"][1][8] = "歌手";
+  h.call({operation: "adminSave", revision: h.call({operation: "adminRead"}).revision, changes: {songs: [], shows: [show], submissions: []}});
+  assert.equal(h.tables["LIVE 通知佇列"].length, 2);
+  const mail = h.notification({operation: "notificationClaim"}).mail;
+  assert.equal(mail.to, "private@example.com");
+  assert.ok(mail.body.includes("2026-11-06 18:30"));
+  assert.ok(mail.body.includes("測試街角"));
+  assert.ok(mail.body.includes("歌 — 歌手"));
+  assert.ok(mail.body.includes("/api/live/unsubscribe?id="));
+  h.notification({operation: "notificationResult", id: mail.id, status: "已寄送"});
+  assert.equal(h.tables["互動原始紀錄"][1][14], "演出預告已寄送");
+  h.call({operation: "adminSave", revision: h.call({operation: "adminRead"}).revision, changes: {songs: [], shows: [{...show, copy: "更新文案"}], submissions: []}});
+  assert.equal(h.tables["LIVE 通知佇列"].length, 2);
+  assert.equal(h.tables["LIVE 演出訂閱"].length, 2);
+});
+test("unsubscribed or removed subscribers never receive pending announcements", () => {
+  const h = harness(true);
+  h.subscribe("private@example.com", "raw-1");
+  const id = h.tables["LIVE 演出訂閱"][1][0];
+  h.tables["LIVE 演出資料"] = [["場次 ID", "資料 JSON"], ["show", JSON.stringify({id: "show", status: "next"})]];
+  h.enqueue("announcement", id, "show");
+  h.unsubscribe(id, h.token(id));
+  assert.equal(h.notification({operation: "notificationClaim"}).mail, null);
+  assert.equal(h.tables["LIVE 通知佇列"][1][4], "已取消");
+  h.subscribe("private@example.com", "new");
+  h.call({operation: "adminSave", revision: h.call({operation: "adminRead"}).revision, changes: {songs: [], shows: null, submissions: [{id: "raw-1", action: "anonymize"}]}});
+  assert.equal(h.tables["LIVE 演出訂閱"][1][1], "");
+  assert.equal(h.tables["LIVE 演出訂閱"][1][2], "已移除聯絡資料");
 });
 test("durable notices deduplicate claims and never copy audience message into owner email", () => {
   const h = harness(true);

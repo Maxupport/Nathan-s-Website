@@ -21,6 +21,7 @@ export type Intake = {
   message: string;
   replyConsent: true;
   subscriptionConsent: boolean;
+  liveUpdatesNoticeVersion: string;
   consentVersion: string;
   events: Array<{ name: string; at: string }>;
 };
@@ -59,6 +60,11 @@ export function parseIntake(value: unknown): Intake {
     throw new Error("請確認本次回覆同意。");
   if (email && !/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(email))
     throw new Error("請填寫有效的 Email。");
+  const needsLiveUpdates = ["點歌", "提問"].includes(kind);
+  if (needsLiveUpdates && !email)
+    throw new Error("點歌與提問必須留下 Email。");
+  if (needsLiveUpdates && data.liveUpdatesNoticeVersion !== "live-updates-default-v1")
+    throw new Error("表單說明已更新，請重新開啟表單後送出。");
   if (["提問", "聯絡"].includes(kind) && !email && !instagram)
     throw new Error("請留下 Email 或 Instagram。");
   if (kind === "點歌" && (!title || !artist))
@@ -100,6 +106,7 @@ export function parseIntake(value: unknown): Intake {
     message,
     replyConsent: true,
     subscriptionConsent: kind === "訂閱" && data.subscriptionConsent === true,
+    liveUpdatesNoticeVersion: needsLiveUpdates ? "live-updates-default-v1" : "",
     consentVersion: replyConsentVersion,
     events,
   };
@@ -155,5 +162,6 @@ export async function writeIntake(
     id: intake.id,
     savedAt: receipt.savedAt,
     duplicate: receipt.duplicate === true,
+    subscription: receipt.subscription,
   };
 }

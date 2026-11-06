@@ -28,6 +28,21 @@ export default function InteractionForm({
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
   const [step, setStep] = useState(1);
+  const [subscription, setSubscription] = useState<Awaited<ReturnType<typeof submitInteraction>>["subscription"]>(null);
+  const [preferenceBusy, setPreferenceBusy] = useState(false);
+  const [preferenceMessage, setPreferenceMessage] = useState("");
+  async function chooseUpdates(choice: "yes" | "no") {
+    if (preferenceBusy) return;
+    if (!intakeEnabled) { setPreferenceMessage(choice === "yes" ? "Demo：已選擇願意訂閱。" : "Demo：已選擇暫不訂閱。"); return; }
+    if (!subscription) { setPreferenceMessage("無法確認訂閱設定，請聯絡 Max 協助標記。"); return; }
+    setPreferenceBusy(true);
+    try {
+      const response = await fetch("/api/live/subscription-preference", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({...subscription, choice}), credentials: "same-origin" });
+      if (!response.ok || (await response.json()).ok !== true) throw new Error();
+      setPreferenceMessage(choice === "yes" ? "已記錄願意訂閱，謝謝你！" : "已記錄不同意，之後不會收到演出預告。");
+    } catch { setPreferenceMessage("尚未確認訂閱選擇已保存，請再按一次，或請 Max 手動標記不同意。"); }
+    finally { setPreferenceBusy(false); }
+  }
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   useEffect(() => {
@@ -60,6 +75,10 @@ export default function InteractionForm({
       setError("請確認是否同意收到你選擇的內容更新。");
       return;
     }
+    if (!retry.current && ["點歌", "提問"].includes(kind) && !get("email")) {
+      setError("點歌與提問請務必留下 Email。");
+      return;
+    }
     const submission: Submission = {
       id: crypto.randomUUID(),
       kind,
@@ -85,6 +104,7 @@ export default function InteractionForm({
     retry.current ??= {
       ...submission,
       consentVersion: "live-reply-v1",
+      liveUpdatesNoticeVersion: ["點歌", "提問"].includes(kind) ? "live-updates-default-v1" : "",
       events: [
         ...events.current,
         { name: "submitted", at: new Date().toISOString() },
@@ -94,7 +114,8 @@ export default function InteractionForm({
     setPending(true);
     setError("");
     try {
-      await submitInteraction(retry.current);
+      const receipt = await submitInteraction(retry.current);
+      setSubscription(receipt.subscription);
       onComplete();
     } catch (error) {
       if (error instanceof SubmissionError && !error.retryable) {
@@ -161,6 +182,17 @@ export default function InteractionForm({
                 </>
               )}
             </p>
+            {["點歌", "提問"].includes(kind) && (
+              <section aria-label="演出預告訂閱選擇">
+                <h3>願意收到我的街頭演出通知嗎？</h3>
+                <p>你的 Email 已登記在演出通知名單；發布新歌單時，會通知你時間、地點與歌單。未選擇時預設接收，也可以現在拒絕，或隨時從預告信取消訂閱。</p>
+                <div className="live-preference-actions">
+                  <button className="live-button" disabled={preferenceBusy} onClick={() => void chooseUpdates("yes")}>願意訂閱</button>
+                  <button className="live-button secondary" disabled={preferenceBusy} onClick={() => void chooseUpdates("no")}>暫不訂閱</button>
+                </div>
+                <p role="status">{preferenceMessage}</p>
+              </section>
+            )}
             {intakeEnabled && kind === "訂閱" && (
               <a
                 className="live-button secondary"
@@ -284,11 +316,11 @@ export default function InteractionForm({
                   </label>
                   <div className="live-form-row">
                     <label>
-                      Email {kind === "訂閱" && <em>必填</em>}
+                      Email {["訂閱", "點歌", "提問"].includes(kind) && <em>必填</em>}
                       <input
                         type="email"
                         name="email"
-                        required={kind === "訂閱"}
+                        required={["訂閱", "點歌", "提問"].includes(kind)}
                         maxLength={254}
                         placeholder="you@example.com"
                         autoComplete="email"
@@ -304,10 +336,8 @@ export default function InteractionForm({
                       />
                     </label>
                   </div>
-                  {kind === "點歌" && (
-                    <p className="live-form-note">
-                      若想在歌曲排入演出時收到通知，請留下 Email 或 IG。
-                    </p>
+                  {["點歌", "提問"].includes(kind) && (
+                    <p className="live-form-note">送出後，Email 會加入街頭演出通知名單，預設接收演出時間、地點與歌單。完成後會詢問你的訂閱意願，可選擇不同意；每封預告信也能取消訂閱。這不包含文章或小說。</p>
                   )}
                   {kind === "訂閱" ? (
                     <>

@@ -40,5 +40,8 @@ export async function submitInteraction(
     !Number.isFinite(Date.parse(receipt.savedAt))
   )
     throw new SubmissionError("尚未收到有效的保存回執，請保留此畫面並重試。");
-  return { id: payload.id, savedAt: receipt.savedAt };
+  const s = receipt.subscription as Record<string, unknown> | undefined;
+  const subscription = s && typeof s.id === "string" && /^[a-f0-9]{64}$/.test(s.id) && typeof s.token === "string" && /^[a-f0-9]{64}$/.test(s.token) && typeof s.submissionId === "string" && s.submissionId === payload.id
+    ? { id: s.id, token: s.token, submissionId: s.submissionId } : null;
+  return { id: payload.id, savedAt: receipt.savedAt, subscription };
 }

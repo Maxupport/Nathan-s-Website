@@ -11,6 +11,7 @@ const sample = () => ({
   message: "測試聲音表達",
   replyConsent: true,
   subscriptionConsent: false,
+  liveUpdatesNoticeVersion: "live-updates-default-v1",
   consentVersion: "live-reply-v1",
   events: [{ name: "submitted", at: "2026-11-05T13:00:00Z" }],
 });
@@ -23,6 +24,8 @@ test("intake validates consent and contact, strips arbitrary fields and never ac
     { replyConsent: false },
     { consentVersion: "wrong" },
     { email: "" },
+    { email: "", instagram: "@valid" },
+    { liveUpdatesNoticeVersion: "wrong" },
     { email: "one@example.com,two@example.com" },
     { email: "one@example.com;two@example.com" },
     { topic: "unknown" },
@@ -40,7 +43,7 @@ test("song and subscription branches retain separate validation", () => {
       topic: "",
       title: "最近",
       artist: "李聖傑",
-      email: "",
+      email: "test@example.com",
     }).title,
     "最近",
   );

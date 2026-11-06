@@ -7,7 +7,27 @@ import {
   previousIds,
   warnings,
   transitionShow,
+  drawShowDrafts,
 } from "./model.ts";
+
+test("one click creates two initial saved-ready drafts then one without changing prior shows", () => {
+  const first = drawShowDrafts(demoSongs, [], "oldies", "");
+  assert.equal(first.length, 2);
+  assert.notEqual(first[0].id, first[1].id);
+  for (const draft of first) {
+    assert.equal(draft.status, "draft");
+    assert.equal(draft.items.length, 12);
+    assert.deepEqual(warnings(draft, demoSongs), []);
+  }
+  const before = JSON.stringify(first);
+  const next = drawShowDrafts(demoSongs, first, "artist", "薛之謙");
+  assert.equal(next.length, 1);
+  assert.equal(next[0].sequence, 3);
+  assert.equal(JSON.stringify(first), before);
+  assert.throws(() => drawShowDrafts(demoSongs, first, "artist", " "));
+  next[0].items[0].song.title = "edited";
+  assert.ok(!demoSongs.some((song) => song.title === "edited"));
+});
 
 test("manual show lifecycle keeps current, next and history independent", () => {
   const upcoming = { ...show(), status: "next" };

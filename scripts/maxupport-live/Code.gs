@@ -118,13 +118,15 @@ function doPost(e) {
         liveAdminOperation(request, SpreadsheetApp.openById(spreadsheetId)),
       );
     if (
-      ["adminSave", "notificationClaim", "notificationResult"].indexOf(
+      ["adminSave", "notificationClaim", "notificationResult", "unsubscribe", "subscriptionPreference"].indexOf(
         request.operation,
       ) !== -1
     ) {
       lock = LockService.getScriptLock();
       if (!lock.tryLock(5000)) return output({ ok: false });
       const book = SpreadsheetApp.openById(spreadsheetId);
+      if (request.operation === "unsubscribe") return output(liveUnsubscribe(request, book));
+      if (request.operation === "subscriptionPreference") return output(liveSubscriptionPreference(request, book));
       return output(
         request.operation.indexOf("notification") === 0
           ? liveNotificationOperation(request, book)
@@ -188,6 +190,7 @@ function doPost(e) {
             sheet.getRange(match.getRow(), 2).getValue(),
           ).toISOString(),
           duplicate: true,
+          subscription: ["點歌", "提問"].indexOf(s.kind) !== -1 ? livePreferenceReceipt(book, sheet.getRange(match.getRow(), 6).getValue(), s.id) : null,
         });
       }
     }
@@ -202,6 +205,12 @@ function doPost(e) {
       return /^[\s]*[=+@\-]/.test(text) ? "'" + text : text;
     }
     const savedAt = new Date().toISOString();
+    if (["點歌", "提問"].indexOf(s.kind) !== -1) {
+      if (s.liveUpdatesNoticeVersion !== "live-updates-default-v1" ||
+          !/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(String(s.email || "")))
+        return output({ ok: false });
+      liveSubscribe(book, s.email, s.id);
+    }
     sheet
       .getRange(count + 1, 1, 1, expectedHeaders.length)
       .setValues([
@@ -226,7 +235,8 @@ function doPost(e) {
     SpreadsheetApp.flush();
     liveQueueNotice(book, "owner", s.id, "");
     liveUpdateSongCounts(book);
-    return output({ ok: true, id: s.id, savedAt: savedAt, duplicate: false });
+    return output({ ok: true, id: s.id, savedAt: savedAt, duplicate: false,
+      subscription: ["點歌", "提問"].indexOf(s.kind) !== -1 ? livePreferenceReceipt(book, s.email, s.id) : null });
   } catch (error) {
     return output({ ok: false });
   } finally {
@@ -407,6 +417,18 @@ function liveAdminOperation(request, book) {
     .forEach(function (row) {
       rawSheet.deleteRow(row);
     });
+  const subscriberSheet = book.getSheetByName("LIVE 演出訂閱");
+  if (subscriberSheet) {
+    const removedEmails = raw.filter(function (r) {
+      return changes.submissions.some(function (c) { return c.id === r[0] && (c.action === "delete" || c.action === "anonymize"); });
+    }).map(function (r) { return String(r[5]).trim().toLowerCase(); });
+    liveRows(book, "LIVE 演出訂閱", 7).forEach(function (r, i) {
+      if (removedEmails.indexOf(String(r[1]).trim().toLowerCase()) !== -1) {
+        subscriberSheet.getRange(i + 2, 2).setValue("");
+        subscriberSheet.getRange(i + 2, 3).setValue("已移除聯絡資料");
+      }
+    });
+  }
   if (liveNotificationsEnabled()) {
     const outbox = liveRows(book, "LIVE 通知佇列", 9);
     const removed = changes.submissions
@@ -433,9 +455,12 @@ function liveAdminOperation(request, book) {
           );
         })
         .forEach(function (show) {
+          const subscribers = liveRows(book, "LIVE 演出訂閱", 7).filter(liveSubscriberActive);
+          subscribers.forEach(function (r) { liveQueueNotice(book, "announcement", r[0], show.id); });
           liveRows(book, "互動原始紀錄", 15).forEach(function (r) {
             if (
               r[2] === "點歌" &&
+              !subscribers.some(function (subscriber) { return String(subscriber[1]).toLowerCase() === String(r[5]).trim().toLowerCase(); }) &&
               show.items.some(function (item) {
                 return (
                   liveSongKey(item.song.title, item.song.artist) ===
@@ -592,6 +617,13 @@ function liveNotificationOperation(request, book) {
         .setValue(
           request.status === "已寄送" ? "Email 已寄送" : request.status,
         );
+    if (rows[index][1] === "announcement") {
+      const subscriber = liveRows(book, "LIVE 演出訂閱", 7).find(function (r) { return r[0] === rows[index][2]; });
+      if (subscriber && subscriber[1]) raw.forEach(function (r, i) {
+        if (["點歌", "提問"].indexOf(r[2]) !== -1 && String(r[5]).trim().toLowerCase() === String(subscriber[1]).toLowerCase())
+          rawSheet.getRange(i + 2, 15).setValue(request.status === "已寄送" ? "演出預告已寄送" : request.status);
+      });
+    }
     return { ok: true };
   }
   const index = rows.findIndex(function (r) {
@@ -605,6 +637,21 @@ function liveNotificationOperation(request, book) {
     rawIndex = raw.findIndex(function (r) {
       return r[0] === row[2];
     });
+  if (row[1] === "announcement") {
+    const subscriber = liveRows(book, "LIVE 演出訂閱", 7).find(function (r) { return r[0] === row[2]; });
+    const showRow = liveRows(book, "LIVE 演出資料", 3).find(function (r) { return r[0] === row[3]; });
+    const show = showRow ? JSON.parse(showRow[1]) : null;
+    if (!subscriber || !liveSubscriberActive(subscriber) || !show || ["next", "current"].indexOf(show.status) === -1) {
+      queue.getRange(index + 2, 5).setValue("已取消");
+      return { ok: true, mail: null };
+    }
+    const unsubscribe = "https://www.maxupport.space/api/live/unsubscribe?id=" + subscriber[0] + "&token=" + liveUnsubscribeToken(subscriber[0]);
+    queue.getRange(index + 2, 5).setValue("處理中");
+    queue.getRange(index + 2, 7).setValue(new Date().toISOString());
+    SpreadsheetApp.flush();
+    return { ok: true, mail: { id: row[0], to: subscriber[1], subject: "[Maxupport LIVE] 下一場演出預告｜第 " + show.sequence + " 場", body:
+      "Max 的下一場街頭演出，邀請你一起來聽歌。\n\n日期時間（台北）：" + show.date.replace("T", " ") + "\n地點：" + show.location + "\n" + show.copy + "\n\n完整歌單：\n" + show.items.map(function (item, i) { return (i + 1) + ". " + item.song.title + " — " + item.song.artist; }).join("\n") + "\n\n你的 Email 已在互動後登記接收 Max 的街頭演出預告。若不希望再收到，請取消訂閱：\n" + unsubscribe } };
+  }
   if (rawIndex < 0) {
     queue.getRange(index + 2, 5).setValue("已取消");
     return { ok: true, mail: null };
@@ -666,4 +713,62 @@ function liveNotificationOperation(request, book) {
     ok: true,
     mail: { id: row[0], to: to, subject: subject, body: body },
   };
+}
+
+function liveSubscribe(book, email, submissionId) {
+  email = String(email).trim().toLowerCase();
+  let sheet = book.getSheetByName("LIVE 演出訂閱");
+  if (!sheet) {
+    sheet = book.insertSheet("LIVE 演出訂閱");
+    sheet.getRange(1, 1, 1, 7).setValues([["訂閱 ID", "Email", "狀態", "告知／同意版本", "建立時間", "更新時間", "最近提交 ID"]]);
+    sheet.setFrozenRows(1);
+  }
+  const id = liveHash("live-subscriber." + email);
+  const rows = liveRows(book, "LIVE 演出訂閱", 7);
+  const index = rows.findIndex(function (r) { return r[0] === id; });
+  // An uncertain submission retry cannot reverse a later unsubscribe.
+  if (index >= 0 && rows[index][6] === submissionId) return;
+  const now = new Date().toISOString();
+  const safeEmail = /^[=+@-]/.test(email) ? "'" + email : email;
+  const explicit = index >= 0 && rows[index][2] === "訂閱中" && rows[index][3] === "live-updates-v1";
+  sheet.getRange(index >= 0 ? index + 2 : sheet.getLastRow() + 1, 1, 1, 7).setValues([[id, safeEmail, explicit ? "訂閱中" : "預設接收（未回答）", explicit ? "live-updates-v1" : "live-updates-default-v1", index >= 0 ? rows[index][4] : now, now, submissionId]]);
+}
+function liveSubscriberActive(row) {
+  return Boolean(row[1]) && ((row[2] === "訂閱中" && row[3] === "live-updates-v1") || (row[2] === "預設接收（未回答）" && row[3] === "live-updates-default-v1"));
+}
+function livePreferenceReceipt(book, email, submissionId) {
+  const id = liveHash("live-subscriber." + String(email).trim().toLowerCase());
+  const exists = liveRows(book, "LIVE 演出訂閱", 7).some(function (row) { return row[0] === id && row[6] === submissionId; });
+  if (!exists) return null;
+  const secret = PropertiesService.getScriptProperties().getProperty("LIVE_BRIDGE_SECRET");
+  const token = Utilities.computeHmacSha256Signature("live-preference." + id + "." + submissionId, secret, Utilities.Charset.UTF_8).map(function (b) { return ("0" + ((b + 256) % 256).toString(16)).slice(-2); }).join("");
+  return { id: id, submissionId: submissionId, token: token };
+}
+function liveSubscriptionPreference(request, book) {
+  const rows = liveRows(book, "LIVE 演出訂閱", 7);
+  const index = rows.findIndex(function (row) { return row[0] === request.id && row[6] === request.submissionId; });
+  if (index < 0 || ["yes", "no"].indexOf(request.choice) === -1) return { ok: false };
+  const receipt = livePreferenceReceipt(book, rows[index][1], request.submissionId);
+  if (!receipt || receipt.token !== request.token) return { ok: false };
+  const sheet = book.getSheetByName("LIVE 演出訂閱");
+  const status = request.choice === "yes" ? "訂閱中" : "不同意";
+  sheet.getRange(index + 2, 3).setValue(status);
+  if (request.choice === "yes") sheet.getRange(index + 2, 4).setValue("live-updates-v1");
+  sheet.getRange(index + 2, 6).setValue(new Date().toISOString());
+  return { ok: true, status: status };
+}
+function liveUnsubscribeToken(id) {
+  const secret = PropertiesService.getScriptProperties().getProperty("LIVE_BRIDGE_SECRET");
+  return Utilities.computeHmacSha256Signature("live-unsubscribe." + id, secret, Utilities.Charset.UTF_8).map(function (b) { return ("0" + ((b + 256) % 256).toString(16)).slice(-2); }).join("");
+}
+function liveUnsubscribe(request, book) {
+  if (!/^[a-f0-9]{64}$/.test(String(request.id)) || request.token !== liveUnsubscribeToken(request.id)) return { ok: false };
+  const sheet = book.getSheetByName("LIVE 演出訂閱");
+  const rows = liveRows(book, "LIVE 演出訂閱", 7);
+  const index = rows.findIndex(function (r) { return r[0] === request.id; });
+  if (index >= 0) {
+    sheet.getRange(index + 2, 3).setValue("已取消訂閱");
+    sheet.getRange(index + 2, 6).setValue(new Date().toISOString());
+  }
+  return { ok: true };
 }

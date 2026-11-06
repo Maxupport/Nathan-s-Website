@@ -115,7 +115,7 @@ function harness(activeEmail = "") {
 }
 const submission = {
   id: "11111111-1111-4111-8111-111111111111",
-  kind: "提問",
+  kind: "鼓勵",
   replyConsent: true,
   consentVersion: "live-reply-v1",
   message: '=IMPORTXML("bad")',

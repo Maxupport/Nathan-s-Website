@@ -48,7 +48,7 @@
 | `type` | enum | `song_request`／`question`／`subscription`／`contact`／`encouragement` |
 | `topic` | enum/null | 人生職涯／聲音優化／創業想法／保險評估；由首屏入口帶入 |
 | `nickname` | text/null | 選填 |
-| `email` | text/null | Email、IG 至少一種才可接收回覆 |
+| `email` | text/null | 點歌、提問與訂閱必填；其他分支依回覆需要選填 |
 | `instagram_handle` | text/null | 正規化保存，保留原始輸入供稽核 |
 | `reply_consent_at` | timestamptz | 必填；未同意不得建立提交 |
 | `reply_channel` | enum/null | `email`／`instagram` |
@@ -58,6 +58,8 @@
 各分支內容放在對應明細表，避免大量無關空欄：`song_requests`、`questions`、`subscription_links`、`contact_messages`、`encouragements`。
 
 ### `song_requests`
+
+演出預告訂閱另存同檔案 `LIVE 演出訂閱`：`訂閱 ID｜Email｜狀態｜告知／同意版本｜建立時間｜更新時間｜最近提交 ID`。訂閱 ID 由正規化 Email 的 SHA-256 產生；送出互動即依告知 `live-updates-default-v1` 加入預設接收名單，成功頁明確同意後才記 `live-updates-v1`；拒絕或手動標記「不同意」即停寄，與文章／小說名單分開。通知以訂閱 ID 及場次 ID 去重；退訂保留狀態、取消後續寄送，匿名化／刪除互動也移除對應訂閱 Email。
 
 | 欄位 | 型別 | 規則 |
 |---|---|---|

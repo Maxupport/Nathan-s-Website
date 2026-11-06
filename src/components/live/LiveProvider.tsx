@@ -11,7 +11,6 @@ import {
 import {
   demoSongs,
   initialShows,
-  generate,
   type Song,
   type Show,
   type Submission,
@@ -27,7 +26,7 @@ type Store = {
   dirty: boolean;
   syncMessage: string;
   refreshAdmin: (discard?: boolean) => Promise<void>;
-  saveAdmin: () => Promise<void>;
+  saveAdmin: (nextShows?: Show[]) => Promise<boolean>;
   songs: Song[];
   setSongs: Dispatch<SetStateAction<Song[]>>;
   shows: Show[];
@@ -126,23 +125,7 @@ export default function LiveProvider({
       }
       setBaseline(data);
       rawSetSongs(data.songs);
-      rawSetShows(
-        data.shows.length
-          ? data.shows
-          : initialShows().map((s, index) => ({
-              ...s,
-              items: generate(
-                [
-                  ...data.songs.slice(index * 3),
-                  ...data.songs.slice(0, index * 3),
-                ],
-                "oldies",
-                "",
-                [],
-                () => 0.5,
-              ),
-            })),
-      );
+      rawSetShows(data.shows);
       rawSetSubmissions(data.submissions);
       setSyncMessage(
         `已同步 Google Sheet · ${new Date().toLocaleTimeString("zh-TW", { hour12: false })}`,
@@ -153,28 +136,36 @@ export default function LiveProvider({
       refreshing.current = false;
     }
   }
-  async function saveAdmin() {
-    if (!managed || !baseline || !changes || savingNow.current) return;
+  async function saveAdmin(nextShows?: Show[]) {
+    if (!managed || !baseline || savingNow.current || (nextShows && dirty))
+      return false;
     savingNow.current = true;
     setSaving(true);
-    const snapshot = { songs, shows, submissions };
+    const snapshot = { songs, shows: nextShows ?? shows, submissions };
+    const pendingChanges = changesSince(baseline, snapshot);
+    if (nextShows) {
+      edits.current++;
+      rawSetShows(nextShows);
+    }
     try {
       const response = await fetch("/api/live/admin/state", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ revision: baseline.revision, changes }),
+        body: JSON.stringify({ revision: baseline.revision, changes: pendingChanges }),
         credentials: "same-origin",
         signal: AbortSignal.timeout(30000),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok || result?.ok !== true) {
         setSyncMessage(result?.error ?? "尚未確認保存，請重新載入檢查。");
-        return;
+        return false;
       }
       setBaseline({ ...snapshot, revision: result.revision });
       setSyncMessage("已確認保存至 Google Sheet。");
+      return true;
     } catch {
       setSyncMessage("尚未確認完整保存，請保留畫面並重新載入檢查後再操作。");
+      return false;
     } finally {
       savingNow.current = false;
       setSaving(false);

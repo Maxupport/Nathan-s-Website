@@ -282,3 +282,30 @@ export function initialShows(): Show[] {
     overrideWarnings: [],
   }));
 }
+
+export function drawShowDrafts(
+  songs: Song[],
+  shows: Show[],
+  mode: Mode,
+  artist: string,
+): Show[] {
+  if (mode === "artist" && !artist.trim())
+    throw new Error("請先填寫專題歌手。");
+  const sequence = Math.max(0, ...shows.map((show) => show.sequence));
+  const excluded = previousIds(shows);
+  return Array.from({ length: shows.length ? 1 : 2 }, (_, index) => ({
+    id: crypto.randomUUID(),
+    sequence: sequence + index + 1,
+    date: "",
+    location: "",
+    copy: "",
+    mode,
+    artist: mode === "artist" ? artist.trim() : "",
+    items: generate(songs, mode, artist, excluded).map((item) => ({
+      ...item,
+      song: { ...item.song },
+    })),
+    status: "draft",
+    overrideWarnings: [],
+  }));
+}

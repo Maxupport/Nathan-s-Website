@@ -21,6 +21,7 @@ import { useState, useEffect, useEffectEvent, type FormEvent } from "react";
 import {
   categories,
   generate,
+  drawShowDrafts,
   previousIds,
   warnings,
   transitionShow,
@@ -78,6 +79,9 @@ export default function LiveAdmin() {
   const [slot, setSlot] = useState<Slot>("機動");
   const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmComplete, setConfirmComplete] = useState(false);
+  const [drawMode, setDrawMode] = useState<Mode>("oldies");
+  const [drawArtist, setDrawArtist] = useState("");
+  const [drawing, setDrawing] = useState(false);
   const show = shows.find((s) => s.id === selected) ?? shows[0];
   const excluded = previousIds(shows);
   const issues = show ? warnings(show, songs, excluded) : [];
@@ -145,23 +149,27 @@ export default function LiveAdmin() {
         : "Demo 預告已發布，可以切到觀眾頁查看。通知僅建立示例狀態，未實際寄送。",
     );
   }
-  function newShow() {
-    const sequence = Math.max(...shows.map((s) => s.sequence), 0) + 1;
-    const item: Show = {
-      id: crypto.randomUUID(),
-      sequence,
-      date: "",
-      location: "",
-      copy: "",
-      mode: "oldies",
-      artist: "",
-      items: generate(songs, "oldies", "", excluded),
-      status: "draft",
-      overrideWarnings: [],
-    };
-    setShows((old) => [...old, item]);
-    setSelected(item.id);
-    setNotice("已產生一份新的下一場草稿。");
+  async function newShow() {
+    if (drawing || saving || (managed && dirty)) return;
+    setDrawing(true);
+    try {
+      const drafts = drawShowDrafts(songs, shows, drawMode, drawArtist);
+      const nextShows = [...shows, ...drafts];
+      setSelected(drafts[0].id);
+      if (managed) {
+        const saved = await saveAdmin(nextShows);
+        if (!saved) {
+          setNotice("歌單已抽出，但尚未確認保存。請保留畫面，按「儲存修改」重試；不要重複建立。");
+          return;
+        }
+      } else setShows(nextShows);
+      const incomplete = drafts.some((draft) => warnings(draft, songs, excluded).length);
+      setNotice(`已抽出並${managed ? "儲存" : "建立"} ${drafts.length} 份可編輯歌單。${incomplete ? "分類或曲目不足，請查看配置提醒並調整。" : "可以直接調整順序與替換歌曲。"}`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "無法建立歌單，請稍後重試。");
+    } finally {
+      setDrawing(false);
+    }
   }
   function addSong(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -381,13 +389,26 @@ export default function LiveAdmin() {
             <div className="live-workspace-heading">
               <div>
                 <h2>每一場，都值得好好準備。</h2>
-                <p>首批已準備兩份草稿；後續每次新增一份。</p>
+                <p>先一鍵抽歌建立，再編輯調整。首次建立兩份，之後每次一份。</p>
               </div>
-              <button className="live-button secondary" onClick={newShow}>
-                <Plus size={16} />
-                新一場草稿
-              </button>
             </div>
+            <section className="live-panel live-build-panel" aria-label="一鍵建構歌單">
+              <h2>依規則，一鍵建構歌單</h2>
+              <p className="live-form-note">台文 2 · 英文 2 · 中國歌 2 · 專題 5 · 機動 1；至少一首炫技，排除最近三場已演出歌曲。分類不足會列出缺口。</p>
+              <div className="live-generation">
+                <label>新歌單的五首專題
+                  <select value={drawMode} disabled={drawing} onChange={(event) => setDrawMode(event.target.value as Mode)}>
+                    <option value="oldies">老歌主題</option>
+                    <option value="artist">指定歌手</option>
+                  </select>
+                </label>
+                {drawMode === "artist" && <label>專題歌手<input value={drawArtist} disabled={drawing} placeholder="輸入歌手名稱" onChange={(event) => setDrawArtist(event.target.value)} /></label>}
+                <button className="live-button" disabled={drawing || saving || (managed && dirty) || (drawMode === "artist" && !drawArtist.trim())} onClick={() => void newShow()}>
+                  <Sparkles size={18} />{drawing ? "正在抽歌與儲存…" : "一鍵抽歌並建立歌單"}
+                </button>
+              </div>
+              <p className="live-form-note">{managed && dirty ? "請先儲存目前的修改，再建立新歌單。" : managed ? "抽出後自動儲存為私人草稿；你調整並發布後，觀眾才會看見。" : "Demo 僅建立本頁草稿。"}</p>
+            </section>
             <div className="live-show-tabs" aria-label="選擇場次">
               {shows.map((s) => (
                 <button
@@ -427,6 +448,8 @@ export default function LiveAdmin() {
                       {show.status === "draft" ? "可編輯" : "發布快照"}
                     </span>
                   </div>
+                  <details className="live-redraw">
+                  <summary>重新抽選這份草稿（會替換目前歌單）</summary>
                   <div className="live-generation">
                     <label>
                       五首專題
@@ -476,6 +499,7 @@ export default function LiveAdmin() {
                       重新抽選
                     </button>
                   </div>
+                  </details>
                   <p className="live-form-note">
                     台文 2 · 英文 2 · 中國歌 2 · 專題 5 · 機動
                     1；至少一首炫技。可拖曳，也可用上下按鈕排序。
