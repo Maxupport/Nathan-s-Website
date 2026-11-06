@@ -51,7 +51,7 @@ function harness(activeEmail = "") {
     },
   };
   const context = vm.createContext({
-    HtmlService: { createHtmlOutput: (html) => html },
+    HtmlService: { createHtmlOutput: (html) => ({ addMetaTag: () => html }) },
     Session: {
       getActiveUser: () => ({ getEmail: () => activeEmail }),
       getEffectiveUser: () => {
@@ -142,7 +142,10 @@ test("Google login refuses anonymous or different active users and arbitrary ret
     },
   };
   for (const email of ["", "other@gmail.com"]) {
-    assert.ok(!harness(email).context.doGet(request).includes("#proof="));
+    const page = harness(email).context.doGet(request);
+    assert.ok(!page.includes("#proof="));
+    assert.ok(page.includes('href="https://www.maxupport.space/api/live/auth/login"'));
+    assert.ok(page.includes("登入／切換 Google 帳號"));
   }
   const owner = harness("maxupport@gmail.com");
   assert.ok(owner.context.doGet(request).includes("#proof="));
@@ -161,6 +164,11 @@ test("Google login refuses anonymous or different active users and arbitrary ret
       .doGet({ parameter: { ...request.parameter, state: "wrong" } })
       .includes("#proof="),
   );
+  const malicious = owner.context.doGet({parameter: {
+    state: request.parameter.state, returnTo: 'https://evil.example/\"><script>alert(1)</script>',
+  }});
+  assert.ok(!malicious.includes("evil.example"));
+  assert.ok(!malicious.includes("<script>"));
 });
 test("invalid signatures and stale envelopes do not write", () => {
   const h = harness();

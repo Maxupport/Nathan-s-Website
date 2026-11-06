@@ -8,6 +8,7 @@
 - 私人後台：<https://www.maxupport.space/live/admin>。
 - `maxupport.space/live` 會轉到 www 網址；原網站選單沒有新增 LIVE 入口，可直接開啟或掃 QR。
 - 登入時使用 Max 的 Google 帳號；Google 確認本人後，點「返回管理端」。工作階段有效 12 小時，可隨時登出。
+- 手機初次登入會先開啟 Google 帳號選擇，請選 `maxupport@gmail.com`。若無法確認帳號，橋接頁提供「登入／切換 Google 帳號」及返回入口，不會停在只有提示文字的頁面。登入超過五分鐘請重新開始；本次修正仍待使用者在實際 iPhone 確認。
 - Google Sheet 直接作為資料來源；使用你原本持有的私人檔案連結，不需公開分享。
 
 ## 歌曲與演出

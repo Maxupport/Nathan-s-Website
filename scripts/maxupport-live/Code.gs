@@ -3,8 +3,11 @@
 // Anonymous callers cannot obtain a proof even though the intake URL is public.
 function doGet(e) {
   const denied = function () {
-    return HtmlService.createHtmlOutput(
-      "<h1>Maxupport LIVE</h1><p>請使用 Max 的 Google 帳號登入管理端。</p>",
+    return liveLoginPage(
+      '<h1>登入管理端</h1><p>目前無法確認 Max 的 Google 帳號。請點下方按鈕，登入或切換至 maxupport@gmail.com。</p>' +
+        '<a class="button" target="_top" rel="noreferrer" href="https://www.maxupport.space/api/live/auth/login">登入／切換 Google 帳號</a>' +
+        '<p>若已登入仍回到此頁，請使用一般瀏覽模式，確認此瀏覽器已登入上述 Google 帳號，再重新開始。登入超過五分鐘也請重新開始。</p>' +
+        '<a target="_top" rel="noreferrer" href="https://www.maxupport.space/live/admin">返回網站管理入口</a>',
     );
   };
   try {
@@ -51,14 +54,24 @@ function doGet(e) {
     // Fragment avoids sending the proof in the website URL or referrer logs.
     const href =
       returnTo + "#proof=" + encodeURIComponent(payload + "." + signature);
-    return HtmlService.createHtmlOutput(
-      '<meta name="referrer" content="no-referrer"><h1>Maxupport LIVE</h1><p>已確認 Max 的 Google 帳號，請於一分鐘內返回管理端。</p><a target="_top" rel="noreferrer" href="' +
+    return liveLoginPage(
+      '<h1>帳號確認成功</h1><p>已確認 Max 的 Google 帳號，請於一分鐘內返回管理端。</p><a class="button" target="_top" rel="noreferrer" href="' +
         href +
         '">返回管理端</a>',
     );
   } catch (error) {
     return denied();
   }
+}
+
+function liveLoginPage(content) {
+  return HtmlService.createHtmlOutput(
+    '<meta name="referrer" content="no-referrer"><style>' +
+      'body{margin:0;padding:32px 20px;background:#f6f4e9;color:#153c47;font:18px/1.7 system-ui,sans-serif}' +
+      'main{max-width:520px;margin:24px auto}h1{font-size:28px}a{color:#245d42}' +
+      '.button{display:block;padding:16px 20px;border-radius:12px;background:#245d42;color:white;text-align:center;text-decoration:none;font-weight:700}' +
+      '</style><main><p>MAXUPPORT LIVE</p>' + content + '</main>',
+  ).addMetaTag("viewport", "width=device-width, initial-scale=1");
 }
 
 function doPost(e) {

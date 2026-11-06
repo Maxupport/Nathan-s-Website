@@ -23,8 +23,13 @@ export async function GET(request: Request) {
     return new Response(null, { status: 503 });
   url.searchParams.set("state", state);
   url.searchParams.set("returnTo", `${origin}/live/auth`);
+  // The public intake bridge also accepts anonymous requests. Explicitly select
+  // a Google account before entering it so a fresh phone can actually sign in.
+  const chooser = new URL("https://accounts.google.com/AccountChooser");
+  chooser.searchParams.set("continue", url.toString());
+  chooser.searchParams.set("Email", "maxupport@gmail.com");
   return new Response(null, {
     status: 303,
-    headers: { Location: url.toString(), "Cache-Control": "no-store" },
+    headers: { Location: chooser.toString(), "Cache-Control": "no-store" },
   });
 }
