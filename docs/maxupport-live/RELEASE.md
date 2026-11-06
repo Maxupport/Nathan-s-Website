@@ -1,0 +1,47 @@
+# 上線與驗證紀錄
+
+2026-11-06：已從功能分支提交 `eccbcecf79e678810d523cd13ba7048280374354` 建立 Production，Vercel 狀態 READY，正式別名包含 `www.maxupport.space` 與 `maxupport.space`。Google 資料橋接器獨立更新至第 6 版，唯讀查詢不占用寫入鎖。
+
+- 公開入口：<https://www.maxupport.space/live>
+- 私人後台：<https://www.maxupport.space/live/admin>
+- 原首頁回應 200，未新增 LIVE 選單；main 仍為既有提交，沒有推送或合併。
+- 正式表單使用原有系統測試 ID 驗證，回應 201、duplicate=true、保存時間與原始紀錄一致，未新增重複留言。
+- 正式 Google 本人登入及 Sheet 讀回完成，後台顯示真實 159 首歌曲、兩份草稿及測試互動；匿名私人 API 回應 401。
+- 三個公開查詢與一筆原 ID 重送同時驗證，全部成功；僅為小量併發驗證。
+- 36 項本機測試、TypeScript、LIVE 範圍 ESLint 與完整建置通過。
+- 手機模擬尺寸 320×568／844×390 的六入口順序、顯示與水平溢出檢查通過，實際 iPhone Safari 尚待實機驗收。
+
+## 通知驗證與待提供資料
+
+Google 寄信權限已由使用者具體同意，寄信服務與正式環境設定已啟用。最新 Production 網站使用功能分支提交 `6563d7332f73abe4b98f3a1c2bf90634f4d0016f`，Vercel 為 READY，沒有推送 main。
+
+本人 Gmail 已確認收到系統測試信；同一通知編號重試回傳 duplicate=true。另以原生工具先核對既有系統測試紀錄，再由正式網站重送同 ID，取得原保存回執、不新增留言；自動通知佇列記為已寄送，Gmail 確認收到含該提交 ID 的提醒。這兩封驗證信均只寄給 Max，沒有對觀眾寄送測試。
+
+訂閱成功頁提供既有 Google 表單，由觀眾完成最後一步；不是後端自動建立文章／小說分眾。歌曲分類、首場日期／時間／地點仍由 Max 提供，原易拉展 QR 圖檔尚未替換。
+
+## 維護
+
+2026-11-06 歌單重置及歷史保護：經使用者要求，5 份舊草稿已從正式演出資料移除，同檔案保留隱藏備份；讀回只餘標題列，公開歌單 API 200、shows=[]。網站提交 `0488b8f` 已 Production READY，資料橋接器第 11 版。未演出草稿／預告提供頁內二次確認刪除，演出中不可刪除；完成演出由伺服器產生固定 SVG 紀錄圖，可在後台下載 PNG。已演出內容與紀錄圖由橋接器禁止變更或移除，不只隱藏按鈕。Sheet 擁有者仍可手動改原始檔，不宣稱防竄改儲存。
+
+43 項測試、TypeScript 與 LIVE ESLint 通過；Vercel 正式建置 READY。隔離測試確認刪除草稿、保護演出中、完成後產生安全轉義的圖像、拒絕刪除／修改歷史、後續儲存保留圖像。瀏覽器刪除互動驗證遇到原生確認視窗阻擋，改為頁內確認後仍未完成瀏覽器點擊驗收，不能宣稱 UI 刪除與 PNG 下載已實測成功；未建立假正式演出或寄出測試預告。使用者將自行由建立、填寫演出資訊、發布並儲存，到觀眾頁驗收。
+
+2026-11-06 歌單與演出訂閱更新：新增手機／電腦共用的一鍵規則抽選與草稿自動儲存，保留人工編輯及缺額警告，重抽控制預設收合。點歌／提問改為 Email 必填、送出後詢問訂閱意願，依最新指示預設接收、明確拒絕即停寄；同檔案新增私人演出訂閱分頁，以 Email 去重、發布時排入完整預告、同場不重複廣播，並提供確認式退訂。既有 Google 資料橋接器更新第 9 版，未新增帳號權限或付費服務。41 項測試、TypeScript、LIVE ESLint 與完整建置通過；390×844 手機模擬及桌面 Demo 一鍵抽選通過，正式儲存驗證另記。未發布假演出或對觀眾寄送測試預告。iPhone 實際登入尚未通過，不以尺寸模擬替代。
+
+Production 提交 `4add015` 已 READY 並綁定正式網域。正式瀏覽器填表先驗證缺 Email 被阻擋，再以 Max 本人信箱送出一筆明確標示系統測試的點歌；成功後顯示訂閱問題，原生 Sheet 工具確認「預設接收（未回答）」與告知版本。按「暫不訂閱」後，畫面及 Sheet 均確認「不同意」。正式 API 另驗證無 Email 提問及無效退訂連結均為 400，沒有保存或寄信。
+
+正式後台一鍵建立第 3 場私人草稿，自動儲存回執成功；重新載入仍可選第 3 場，Sheet 保留原兩場及新草稿。未分類歌庫只抽出可符合機動配置的歌曲並列出缺額，未任意推定歌曲分類；要生成完整 12 首仍需完成分類。此草稿保留供 Max 調整，沒有發布。訂閱者廣播、去重與取消邏輯以隔離測試驗證，本次沒有實際發送演出預告。
+
+2026-11-06 手機驗收修正：使用者回報 Google 橋接頁只有拒絕文字，未提供登入操作。網站登入入口改為先選擇 Google 帳號；既有橋接器新增可重試、返回網站的行動版頁面，仍驗證 active user、固定返回位置、state 與簽章。36 項測試（含拒絕頁操作及惡意返回位置防護）、TypeScript 與登入路由 ESLint 通過；實機重測結果另行確認。
+
+網站修正提交 `ac353c1` 已部署 Production READY，既有 Google 資料橋接器更新為第 7 版，未另建專案或擴大帳號權限。瀏覽器已驗證新登入入口→Google 帳號確認→返回網站→讀取私人管理資料；另直接驗證缺少登入參數時的可操作引導頁。此桌面瀏覽器已有 Google 登入，iPhone 初次登入仍待使用者重測。
+
+Draft PR 與功能分支保留，main 未合併。未來重新部署 main 會覆蓋這個功能分支的正式網站版本；Sheet 資料保留。回滾只處理網站部署，不刪除原始互動。Google 程式與網站需分別確認版本，私人檔案位置及密鑰不放入此紀錄。
+
+
+2026-11-07 lyrics release: Production `cf1c19d337e429ebb6758847a9930371faf368ac` is READY; existing Google bridge is version 12. Song master column S is the sole URL source, editable in admin. Public shows resolve current URLs by song ID without modifying stored show snapshots, republishing shows, or queuing announcements. The redundant per-show lyrics tab and its generator were removed.
+
+The two setlists contain 24 entries / 21 distinct songs: 19 verified KKBOX pages, one MoJimLyrics page, and one previously verified alternate source. No LINE MUSIC links remain. Elton John uses a live version, noted in the master cell. Only external URLs are stored; lyrics text is not copied or cached.
+
+Old production song names were plain text. The new names link directly in the current tab, avoiding reliance on popups, with browser Back returning to LIVE. Link targets are at least 44px high and have keyboard focus styles.
+
+Validation: 45 tests, TypeScript, LIVE ESLint, and production Vercel build passed. Public API returns only one published show with 12 links matching the master, with no draft/contact data. Browser clicks on two songs reached the matching KKBOX pages and Back returned successfully. All six interaction entries opened the expected dialogs without submitting anything. Viewport override did not take effect (observed width remained 1272px); these checks do NOT count as portrait/landscape mobile validation. Real iPhone retesting remains outstanding.
