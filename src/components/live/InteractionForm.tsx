@@ -196,7 +196,7 @@ export default function InteractionForm({
             </h2>
             <p className="live-muted">
               {intakeEnabled
-                ? "送出後會安全保存，請等待成功提示。"
+                ? "填寫必填問題即可送出，但如果希望收到回覆，請務必留下聯絡資訊給我～"
                 : "Demo 體驗，請填測試資料；重新整理後即清除。"}
             </p>
             {step === 1 ? (
