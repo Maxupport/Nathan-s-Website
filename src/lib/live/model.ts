@@ -32,6 +32,7 @@ export type Show = {
   items: Item[];
   status: "draft" | "next" | "current" | "performed";
   overrideWarnings: string[];
+  recordImage?: string;
 };
 
 export function transitionShow(

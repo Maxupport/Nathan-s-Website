@@ -72,7 +72,7 @@ export async function PUT(request: Request) {
     if (result.ok !== true || typeof result.revision !== "string")
       throw new Error();
     after(() => drainNotifications());
-    return Response.json({ ok: true, revision: result.revision }, { headers });
+    return Response.json({ ok: true, revision: result.revision, shows: result.shows }, { headers });
   } catch {
     return Response.json(
       { error: "尚未確認完整保存，請重新載入檢查後再試。" },

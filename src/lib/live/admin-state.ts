@@ -84,6 +84,7 @@ export function parseShow(value: unknown): Show {
     artist: string(s.artist, 100),
     status: status as Show["status"],
     overrideWarnings: s.overrideWarnings.map((v) => string(v, 300)),
+    ...(s.recordImage ? {recordImage: string(s.recordImage, 40000)} : {}),
     items: s.items.map((value) => {
       const item = object(value);
       const slot = string(item.slot, 20);

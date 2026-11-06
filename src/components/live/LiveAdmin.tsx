@@ -193,6 +193,27 @@ export default function LiveAdmin() {
         : "已加入示例歌庫，預設可上場。",
     );
   }
+  async function deleteShow() {
+    if (!show || !["draft", "next"].includes(show.status) || saving || drawing) return;
+    if (managed && dirty) { setNotice("請先儲存目前修改，再刪除歌單。"); return; }
+    if (!window.confirm(`刪除第 ${show.sequence} 場尚未演出的歌單？${show.status === "next" ? "已公開的預告也會移除。" : ""}`)) return;
+    const next = shows.filter((s) => s.id !== show.id);
+    const saved = managed ? await saveAdmin(next) : (setShows(next), true);
+    setSelected(next[0]?.id ?? "");
+    setNotice(saved ? "已刪除未演出的歌單。" : "尚未確認刪除成功，請保留畫面並檢查同步訊息。");
+  }
+  async function downloadRecord(record: string, sequence: number) {
+    const image = new Image();
+    image.src = record;
+    try {
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+      canvas.getContext("2d")?.drawImage(image, 0, 0);
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png"); link.download = `Maxupport-LIVE-第${sequence}場紀錄.png`; link.click();
+    } catch { setNotice("無法下載紀錄圖，請稍後重試。"); }
+  }
   function exportCsv() {
     const rows = [
       [
@@ -448,6 +469,8 @@ export default function LiveAdmin() {
                       {show.status === "draft" ? "可編輯" : "發布快照"}
                     </span>
                   </div>
+                  {["draft", "next"].includes(show.status) && <button className="live-button secondary" disabled={saving || drawing || (managed && dirty)} onClick={() => void deleteShow()}><Trash2 size={16} />刪除這份未演出歌單</button>}
+                  {show.status === "performed" && <div className="live-notice"><p>已演出紀錄已鎖定，不能修改或刪除。</p>{show.recordImage && <><a href={show.recordImage} target="_blank" rel="noreferrer">檢視演出紀錄圖</a><button className="live-button secondary" onClick={() => void downloadRecord(show.recordImage!, show.sequence)}>下載演出紀錄 PNG</button></>}</div>}
                   <details className="live-redraw">
                   <summary>重新抽選這份草稿（會替換目前歌單）</summary>
                   <div className="live-generation">

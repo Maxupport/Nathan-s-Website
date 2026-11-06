@@ -147,6 +147,27 @@ test("public projection excludes draft shows and never returns private intake", 
   assert.equal(result.submissions, undefined);
   assert.ok(!JSON.stringify(result).includes("private"));
 });
+test("unperformed drafts can be deleted but completed records and their images are immutable", () => {
+  const h = harness();
+  const show = {id:"archive-test",sequence:1,status:"current",date:"2026-11-06T18:30",location:"測試街角",items:[{song:{title:"歌<&>",artist:"歌手"},slot:"機動"}]};
+  h.tables["LIVE 演出資料"] = [["場次 ID","資料 JSON"],[show.id,JSON.stringify(show)]];
+  const save = (shows) => h.call({operation:"adminSave",revision:h.call({operation:"adminRead"}).revision,changes:{songs:[],shows,submissions:[]}});
+  assert.equal(save([]).ok,false);
+  const result = save([{...show,status:"performed"}]);
+  assert.equal(result.ok,true);
+  const archived = h.call({operation:"adminRead"}).shows[0];
+  assert.ok(archived.recordImage.startsWith("data:image/svg+xml"));
+  assert.ok(decodeURIComponent(archived.recordImage).includes("歌&lt;&amp;&gt;"));
+  assert.equal(save([]).ok,false);
+  assert.equal(save([{...archived,location:"改動"}]).ok,false);
+  assert.equal(save([{...archived,recordImage:"改動"}]).ok,false);
+  assert.equal(save([{...archived}]).ok,true);
+  const withoutImage = {...archived}; delete withoutImage.recordImage;
+  assert.equal(save([withoutImage]).ok,true);
+  assert.equal(h.call({operation:"adminRead"}).shows[0].recordImage, archived.recordImage);
+  assert.equal(save([archived,{...show,id:"draft",status:"draft"}]).ok,true);
+  assert.equal(save([archived]).ok,true);
+});
 test("performance subscription deduplicates email, respects unsubscribe and cannot be revived by an old retry", () => {
   const h = harness(true);
   h.subscribe(" Max@Example.com ", "first");

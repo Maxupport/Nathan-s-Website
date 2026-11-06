@@ -143,6 +143,10 @@ export default function LiveProvider({
     setSaving(true);
     const snapshot = { songs, shows: nextShows ?? shows, submissions };
     const pendingChanges = changesSince(baseline, snapshot);
+    if (pendingChanges.shows) pendingChanges.shows = pendingChanges.shows.map((show) => {
+      if (show.status !== "performed") return show;
+      const copy = {...show}; delete copy.recordImage; return copy;
+    });
     if (nextShows) {
       edits.current++;
       rawSetShows(nextShows);
@@ -160,7 +164,12 @@ export default function LiveProvider({
         setSyncMessage(result?.error ?? "尚未確認保存，請重新載入檢查。");
         return false;
       }
-      setBaseline({ ...snapshot, revision: result.revision });
+      const persistedShows: Show[] = Array.isArray(result.shows) ? result.shows : snapshot.shows;
+      setBaseline({ ...snapshot, shows: persistedShows, revision: result.revision });
+      rawSetShows((old) => old.map((show) => {
+        const saved = persistedShows.find((s) => s.id === show.id);
+        return show.status === "performed" && saved?.recordImage ? {...show, recordImage: saved.recordImage} : show;
+      }));
       setSyncMessage("已確認保存至 Google Sheet。");
       return true;
     } catch {

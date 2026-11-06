@@ -329,6 +329,23 @@ function liveAdminOperation(request, book) {
   const rawSheet = book.getSheetByName("互動原始紀錄");
   const raw = liveRows(book, "互動原始紀錄", 15);
   const rawById = {};
+  if (changes.shows !== null) {
+    for (const old of shows) {
+      const next = changes.shows.find(function (s) { return s.id === old.id; });
+      if (old.status === "performed" && next && !next.recordImage) next.recordImage = old.recordImage;
+      if (old.status === "performed" && (!next || liveStable(next) !== liveStable(old)))
+        return { ok: false, conflict: true };
+      if (old.status === "current" && !next) return { ok: false, conflict: true };
+      if (old.status === "current" && next) {
+        if (["current", "performed"].indexOf(next.status) === -1 || liveStable(Object.assign({}, old, {status: next.status})) !== liveStable(next)) return {ok:false, conflict:true};
+      }
+    }
+    for (const next of changes.shows) {
+      const old = shows.find(function (s) { return s.id === next.id; });
+      if (next.status === "performed" && (!old || ["current", "performed"].indexOf(old.status) === -1)) return { ok: false, conflict: true };
+      if (next.status === "performed" && old.status === "current") next.recordImage = liveShowRecord(next);
+    }
+  }
   raw.forEach(function (r, i) {
     rawById[r[0]] = i + 2;
   });
@@ -481,11 +498,17 @@ function liveAdminOperation(request, book) {
   liveUpdateSongCounts(book);
   return {
     ok: true,
+    shows: changes.shows,
     revision: liveRevision(
       liveRows(book, "歌曲主資料", 18),
       liveRows(book, "LIVE 演出資料", 3),
     ),
   };
+}
+function liveStable(value) {
+  if (Array.isArray(value)) return "[" + value.map(liveStable).join(",") + "]";
+  if (value && typeof value === "object") return "{" + Object.keys(value).sort().map(function (key) { return JSON.stringify(key) + ":" + liveStable(value[key]); }).join(",") + "}";
+  return JSON.stringify(value);
 }
 
 function liveNotificationsEnabled() {
@@ -494,6 +517,15 @@ function liveNotificationsEnabled() {
       "LIVE_NOTIFICATIONS_ENABLED",
     ) === "true"
   );
+}
+function liveShowRecord(show) {
+  function escape(value) { return String(value || "").replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]; }); }
+  const lines = ["Maxupport LIVE｜第 " + show.sequence + " 場演出紀錄", show.date.replace("T", " ") + "（台北）", show.location, ""];
+  show.items.forEach(function (item, i) { lines.push((i + 1) + ". " + item.song.title); lines.push("   " + item.song.artist); });
+  const wrapped = [];
+  lines.forEach(function (line) { const chars = Array.from(String(line)); if (!chars.length) wrapped.push(""); for (let i = 0; i < chars.length; i += 25) wrapped.push(chars.slice(i, i + 25).join("")); });
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="' + (wrapped.length * 32 + 80) + '"><rect width="100%" height="100%" fill="#f6f4e9"/>' + wrapped.map(function (line, i) { return '<text x="28" y="' + (48 + i * 32) + '" font-family="sans-serif" font-size="22" fill="#153c47">' + escape(line) + '</text>'; }).join("") + '</svg>';
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 function liveSongKey(title, artist) {
   return JSON.stringify(
