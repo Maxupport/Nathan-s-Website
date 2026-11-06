@@ -211,10 +211,7 @@ export default function InteractionForm({
                     checked={consent}
                     onChange={(e) => setConsent(e.target.checked)}
                   />
-                  <span>
-                    我同意 Max 就本次內容回覆我。
-                    <small>這不代表同意加入社群或接收長期訂閱。</small>
-                  </span>
+                  <span>我同意 Max 就本次互動主動給我回覆。</span>
                 </label>
                 <button
                   className="live-button"
