@@ -1,4 +1,5 @@
 import { categories, type Song, type Show, type Submission } from "./model.ts";
+import { safeLyricsUrl } from "./lyrics.ts";
 
 export type AdminState = {
   songs: Song[];
@@ -42,6 +43,7 @@ export function parseSong(value: unknown): Song {
     artist: string(s.artist, 100),
     category: category as Song["category"],
     era: era as Song["era"],
+    ...(s.lyricsUrl !== undefined ? {lyricsUrl: safeLyricsUrl(s.lyricsUrl)} : {}),
     ready: s.ready as boolean,
     showcase: s.showcase as boolean,
     serious: s.serious as boolean,
@@ -191,6 +193,7 @@ export function decodeAdmin(value: unknown): AdminState {
           artist: String(r[2] ?? ""),
           category: String(r[3] ?? ""),
           era: String(r[17] ?? ""),
+          lyricsUrl: safeLyricsUrl(r[18]),
           serious: r[4] === "是",
           showcase: r[5] === "是",
           opener: r[6] === "是",

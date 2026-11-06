@@ -1091,6 +1091,20 @@
 .live-redraw summary { cursor: pointer; padding: 12px 0; font-size: 14px; }
 .live-preference-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
 .live-preference-actions .live-button { flex: 1; min-width: 130px; }
+.live-setlist a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 44px;
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  touch-action: manipulation;
+}
+.live-setlist a:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; border-radius: 3px; }
+.live-setlist a svg { flex-shrink: 0; }
+.live-setlist a svg { display: inline; vertical-align: middle; }
 @media (max-width: 767px) {
   .live-build-panel .live-generation { flex-direction: column; align-items: stretch; }
   .live-build-panel .live-generation label { width: 100%; }

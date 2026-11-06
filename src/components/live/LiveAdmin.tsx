@@ -860,7 +860,7 @@ export default function LiveAdmin() {
                 <thead>
                   <tr>
                     <th>歌曲／演唱者</th>
-                    <th>主分類</th><th>歌曲年代</th>
+                    <th>主分類</th><th>歌曲年代</th><th>歌詞連結</th>
                     <th>認真演</th>
                     <th>炫技</th>
                     <th>開場＆壓軸</th>
@@ -899,6 +899,7 @@ export default function LiveAdmin() {
                         </select>
                       </td>
                       <td><select aria-label={`${song.title}歌曲年代`} value={song.era ?? ""} onChange={(e) => setSongs((old) => old.map((s) => s.id === song.id ? {...s, era: e.target.value as Song["era"]} : s))}><option value="">未標年代</option><option>2010 年以前</option><option>2010 年起</option></select></td>
+                      <td><input type="url" aria-label={`${song.title}歌詞網址`} placeholder="https://…" value={song.lyricsUrl ?? ""} onChange={(e) => setSongs((old) => old.map((s) => s.id === song.id ? {...s, lyricsUrl: e.target.value} : s))} /></td>
                       {(
                         ["serious", "showcase", "opener", "ready"] as const
                       ).map((field, i) => (

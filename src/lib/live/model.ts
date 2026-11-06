@@ -13,6 +13,7 @@ export type Song = {
   artist: string;
   category: Category | "";
   era?: "" | "2010 年以前" | "2010 年起";
+  lyricsUrl?: string;
   ready: boolean;
   showcase: boolean;
   serious: boolean;

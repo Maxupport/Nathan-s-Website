@@ -147,6 +147,17 @@ test("public projection excludes draft shows and never returns private intake", 
   assert.equal(result.submissions, undefined);
   assert.ok(!JSON.stringify(result).includes("private"));
 });
+test("published lyrics resolve from the library without rewriting the frozen show snapshot", () => {
+  const h = harness();
+  const show = {id:"lyrics-show",sequence:1,status:"next",items:[{song:{id:"S001",title:"歌",artist:"歌手"},slot:"機動"}]};
+  h.tables["LIVE 演出資料"] = [["場次 ID","資料 JSON"],[show.id,JSON.stringify(show)]];
+  const before = h.tables["LIVE 演出資料"][1][1];
+  h.tables["歌曲主資料"][1][18] = "https://music-tw.line.me/track/123";
+  assert.equal(h.call({operation:"publicRead"}).shows[0].items[0].song.lyricsUrl,"https://music-tw.line.me/track/123");
+  h.tables["歌曲主資料"][1][18] = "javascript:alert(1)";
+  assert.equal(h.call({operation:"publicRead"}).shows[0].items[0].song.lyricsUrl,"");
+  assert.equal(h.tables["LIVE 演出資料"][1][1],before);
+});
 test("unperformed drafts can be deleted but completed records and their images are immutable", () => {
   const h = harness();
   const show = {id:"archive-test",sequence:1,status:"current",date:"2026-11-06T18:30",location:"測試街角",items:[{song:{title:"歌<&>",artist:"歌手"},slot:"機動"}]};

@@ -254,7 +254,7 @@ function liveRevision(songs, shows) {
     Utilities.DigestAlgorithm.SHA_256,
     JSON.stringify([
       songs.map(function (r) {
-        return r.slice(0, 8).concat([r[17] || ""]);
+        return r.slice(0, 8).concat([r[17] || "", r[18] || ""]);
       }),
       shows,
     ]),
@@ -274,7 +274,8 @@ function liveAdminOperation(request, book) {
     .map(function (r) {
       return JSON.parse(r[1]);
     });
-  if (request.operation === "publicRead")
+  if (request.operation === "publicRead") {
+    const lyricSongs = liveRows(book, "歌曲主資料", 19);
     return {
       ok: true,
       shows: shows
@@ -288,7 +289,10 @@ function liveAdminOperation(request, book) {
             date: s.date,
             location: s.location,
             copy: s.copy,
-            items: s.items,
+            items: s.items.map(function (item) {
+              const row = lyricSongs.find(function (r) { return r[0] === item.song.id; });
+              return Object.assign({}, item, {song: Object.assign({}, item.song, {lyricsUrl: liveSafeLyrics(row ? row[18] : item.song.lyricsUrl)})});
+            }),
             status: s.status,
             mode: s.mode,
             artist: s.artist,
@@ -296,10 +300,11 @@ function liveAdminOperation(request, book) {
           };
         }),
     };
+  }
   const songSheet = book.getSheetByName("歌曲主資料");
   if (!songSheet || songSheet.getRange(1, 1).getValue() !== "歌曲 ID")
     return { ok: false };
-  const songs = liveRows(book, "歌曲主資料", 18);
+  const songs = liveRows(book, "歌曲主資料", 19);
   const revision = liveRevision(songs, showRows);
   if (request.operation === "adminRead")
     return {
@@ -386,9 +391,12 @@ function liveAdminOperation(request, book) {
       ]);
   });
   changes.songs.forEach(function (s) {
-    const all = liveRows(book, "歌曲主資料", 18);
+    const all = liveRows(book, "歌曲主資料", 19);
     const index = all.findIndex(function (r) { return r[0] === s.id; });
-    if (index >= 0) songSheet.getRange(index + 2, 18).setValue(cell(s.era || ""));
+    if (index >= 0) {
+      songSheet.getRange(index + 2, 18).setValue(cell(s.era || ""));
+      if (Object.prototype.hasOwnProperty.call(s, "lyricsUrl")) songSheet.getRange(index + 2, 19).setValue(liveSafeLyrics(s.lyricsUrl));
+    }
   });
   if (changes.shows !== null) {
     let sheet = book.getSheetByName("LIVE 演出資料");
@@ -500,7 +508,7 @@ function liveAdminOperation(request, book) {
     ok: true,
     shows: changes.shows,
     revision: liveRevision(
-      liveRows(book, "歌曲主資料", 18),
+      liveRows(book, "歌曲主資料", 19),
       liveRows(book, "LIVE 演出資料", 3),
     ),
   };
@@ -537,7 +545,7 @@ function liveSongKey(title, artist) {
 function liveUpdateSongCounts(book) {
   const sheet = book.getSheetByName("歌曲主資料");
   if (!sheet || sheet.getRange(1, 1).getValue() !== "歌曲 ID") return;
-  const songs = liveRows(book, "歌曲主資料", 18),
+  const songs = liveRows(book, "歌曲主資料", 19),
     counts = {};
   liveRows(book, "互動原始紀錄", 15).forEach(function (r) {
     if (r[2] === "點歌") {
@@ -808,4 +816,9 @@ function liveUnsubscribe(request, book) {
     sheet.getRange(index + 2, 6).setValue(new Date().toISOString());
   }
   return { ok: true };
+}
+
+function liveSafeLyrics(value) {
+  const text = String(value || "").trim();
+  return text.length <= 2000 && /^https:\/\/[^\s/@:]+(?:\:[0-9]+)?(?:[/?#]|$)/i.test(text) ? text : "";
 }

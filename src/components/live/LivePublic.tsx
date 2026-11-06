@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { safeLyricsUrl } from "@/lib/live/lyrics";
 import {
   ArrowDown,
   ArrowUpRight,
@@ -79,18 +80,21 @@ const entrances: Array<{
 
 function Setlist({ show }: { show: Show }) {
   return (
+    <>
+    <p className="live-form-note">點歌曲名稱看歌詞 ↗</p>
     <ol className="live-setlist">
       {show.items.map((item, index) => (
         <li key={`${item.song.id}-${index}`}>
           <span>{String(index + 1).padStart(2, "0")}</span>
           <div>
-            <strong>{item.song.title}</strong>
+            <strong>{safeLyricsUrl(item.song.lyricsUrl) ? <a href={safeLyricsUrl(item.song.lyricsUrl)} target="_blank" rel="noopener noreferrer" aria-label={`${item.song.title}：開啟外部歌詞（新分頁）`}>{item.song.title} <ArrowUpRight size={14} aria-hidden="true" /></a> : item.song.title}</strong>
             <small>{item.song.artist}</small>
           </div>
           {item.song.showcase && <Sparkles size={15} aria-label="炫技歌曲" />}
         </li>
       ))}
     </ol>
+    </>
   );
 }
 
