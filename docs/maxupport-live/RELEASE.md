@@ -36,3 +36,12 @@ Production 提交 `4add015` 已 READY 並綁定正式網域。正式瀏覽器填
 網站修正提交 `ac353c1` 已部署 Production READY，既有 Google 資料橋接器更新為第 7 版，未另建專案或擴大帳號權限。瀏覽器已驗證新登入入口→Google 帳號確認→返回網站→讀取私人管理資料；另直接驗證缺少登入參數時的可操作引導頁。此桌面瀏覽器已有 Google 登入，iPhone 初次登入仍待使用者重測。
 
 Draft PR 與功能分支保留，main 未合併。未來重新部署 main 會覆蓋這個功能分支的正式網站版本；Sheet 資料保留。回滾只處理網站部署，不刪除原始互動。Google 程式與網站需分別確認版本，私人檔案位置及密鑰不放入此紀錄。
+
+
+2026-11-07 lyrics release: Production `cf1c19d337e429ebb6758847a9930371faf368ac` is READY; existing Google bridge is version 12. Song master column S is the sole URL source, editable in admin. Public shows resolve current URLs by song ID without modifying stored show snapshots, republishing shows, or queuing announcements. The redundant per-show lyrics tab and its generator were removed.
+
+The two setlists contain 24 entries / 21 distinct songs: 19 verified KKBOX pages, one MoJimLyrics page, and one previously verified alternate source. No LINE MUSIC links remain. Elton John uses a live version, noted in the master cell. Only external URLs are stored; lyrics text is not copied or cached.
+
+Old production song names were plain text. The new names link directly in the current tab, avoiding reliance on popups, with browser Back returning to LIVE. Link targets are at least 44px high and have keyboard focus styles.
+
+Validation: 45 tests, TypeScript, LIVE ESLint, and production Vercel build passed. Public API returns only one published show with 12 links matching the master, with no draft/contact data. Browser clicks on two songs reached the matching KKBOX pages and Back returned successfully. All six interaction entries opened the expected dialogs without submitting anything. Viewport override did not take effect (observed width remained 1272px); these checks do NOT count as portrait/landscape mobile validation. Real iPhone retesting remains outstanding.
