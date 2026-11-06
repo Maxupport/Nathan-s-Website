@@ -157,9 +157,6 @@ export default function LivePublic() {
                 ? "PREVIEW · 表單與演出資訊已連接 Google Sheet。"
                 : "PREVIEW · 表單已連接私人 Google Sheet；演出資訊仍為示例。"
               : "PREVIEW · 體驗版，請使用測試資料；重新整理會重設。"}
-          <Link href="/live/admin">
-            {managed ? "Max 管理端" : "管理端 Demo"} <ArrowUpRight size={13} />
-          </Link>
         </div>
         <header className="live-header live-container">
           <Link href="/live" className="live-logo">
