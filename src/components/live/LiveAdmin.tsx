@@ -79,6 +79,7 @@ export default function LiveAdmin() {
   const [slot, setSlot] = useState<Slot>("機動");
   const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmComplete, setConfirmComplete] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [drawMode, setDrawMode] = useState<Mode>("oldies");
   const [drawArtist, setDrawArtist] = useState("");
   const [drawing, setDrawing] = useState(false);
@@ -196,7 +197,8 @@ export default function LiveAdmin() {
   async function deleteShow() {
     if (!show || !["draft", "next"].includes(show.status) || saving || drawing) return;
     if (managed && dirty) { setNotice("請先儲存目前修改，再刪除歌單。"); return; }
-    if (!window.confirm(`刪除第 ${show.sequence} 場尚未演出的歌單？${show.status === "next" ? "已公開的預告也會移除。" : ""}`)) return;
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setConfirmDelete(false);
     const next = shows.filter((s) => s.id !== show.id);
     const saved = managed ? await saveAdmin(next) : (setShows(next), true);
     setSelected(next[0]?.id ?? "");
@@ -439,6 +441,7 @@ export default function LiveAdmin() {
                     setSelected(s.id);
                     setConfirmPublish(false);
                     setConfirmComplete(false);
+                    setConfirmDelete(false);
                     setNotice("");
                   }}
                 >
@@ -469,7 +472,7 @@ export default function LiveAdmin() {
                       {show.status === "draft" ? "可編輯" : "發布快照"}
                     </span>
                   </div>
-                  {["draft", "next"].includes(show.status) && <button className="live-button secondary" disabled={saving || drawing || (managed && dirty)} onClick={() => void deleteShow()}><Trash2 size={16} />刪除這份未演出歌單</button>}
+                  {["draft", "next"].includes(show.status) && <div><button className="live-button secondary" disabled={saving || drawing || (managed && dirty)} onClick={() => void deleteShow()}><Trash2 size={16} />{confirmDelete ? `確認刪除第 ${show.sequence} 場歌單` : "刪除這份未演出歌單"}</button>{confirmDelete && <><p role="alert">再次確認後會刪除此歌單；若已發布，觀眾頁的預告也會移除。</p><button className="live-button secondary" onClick={() => setConfirmDelete(false)}>取消刪除</button></>}</div>}
                   {show.status === "performed" && <div className="live-notice"><p>已演出紀錄已鎖定，不能修改或刪除。</p>{show.recordImage && <><a href={show.recordImage} target="_blank" rel="noreferrer">檢視演出紀錄圖</a><button className="live-button secondary" onClick={() => void downloadRecord(show.recordImage!, show.sequence)}>下載演出紀錄 PNG</button></>}</div>}
                   <details className="live-redraw">
                   <summary>重新抽選這份草稿（會替換目前歌單）</summary>
