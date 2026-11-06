@@ -254,7 +254,7 @@ function liveRevision(songs, shows) {
     Utilities.DigestAlgorithm.SHA_256,
     JSON.stringify([
       songs.map(function (r) {
-        return r.slice(0, 8);
+        return r.slice(0, 8).concat([r[17] || ""]);
       }),
       shows,
     ]),
@@ -299,7 +299,7 @@ function liveAdminOperation(request, book) {
   const songSheet = book.getSheetByName("歌曲主資料");
   if (!songSheet || songSheet.getRange(1, 1).getValue() !== "歌曲 ID")
     return { ok: false };
-  const songs = liveRows(book, "歌曲主資料", 17);
+  const songs = liveRows(book, "歌曲主資料", 18);
   const revision = liveRevision(songs, showRows);
   if (request.operation === "adminRead")
     return {
@@ -367,6 +367,11 @@ function liveAdminOperation(request, book) {
           s.ready ? "是" : "否",
         ],
       ]);
+  });
+  changes.songs.forEach(function (s) {
+    const all = liveRows(book, "歌曲主資料", 18);
+    const index = all.findIndex(function (r) { return r[0] === s.id; });
+    if (index >= 0) songSheet.getRange(index + 2, 18).setValue(cell(s.era || ""));
   });
   if (changes.shows !== null) {
     let sheet = book.getSheetByName("LIVE 演出資料");
@@ -477,7 +482,7 @@ function liveAdminOperation(request, book) {
   return {
     ok: true,
     revision: liveRevision(
-      liveRows(book, "歌曲主資料", 17),
+      liveRows(book, "歌曲主資料", 18),
       liveRows(book, "LIVE 演出資料", 3),
     ),
   };
@@ -500,7 +505,7 @@ function liveSongKey(title, artist) {
 function liveUpdateSongCounts(book) {
   const sheet = book.getSheetByName("歌曲主資料");
   if (!sheet || sheet.getRange(1, 1).getValue() !== "歌曲 ID") return;
-  const songs = liveRows(book, "歌曲主資料", 17),
+  const songs = liveRows(book, "歌曲主資料", 18),
     counts = {};
   liveRows(book, "互動原始紀錄", 15).forEach(function (r) {
     if (r[2] === "點歌") {

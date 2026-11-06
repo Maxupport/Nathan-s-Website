@@ -12,6 +12,7 @@ export type Song = {
   title: string;
   artist: string;
   category: Category | "";
+  era?: "" | "2010 年以前" | "2010 年起";
   ready: boolean;
   showcase: boolean;
   serious: boolean;
@@ -128,6 +129,7 @@ export const demoSongs: Song[] = seed.map(
     title,
     artist,
     category,
+    era: category === "老歌" ? "2010 年以前" : "",
     ready: true,
     showcase: [0, 8, 12, 18, 24, 30].includes(index),
     serious: index % 3 === 0,
@@ -153,7 +155,7 @@ function fits(song: Song, slot: Slot, mode: Mode, artist: string) {
   if (slot === "機動") return true;
   if (slot === "專題")
     return mode === "oldies"
-      ? song.category === "老歌"
+      ? song.era === "2010 年以前"
       : song.artist.trim() === artist.trim();
   return song.category === slot;
 }

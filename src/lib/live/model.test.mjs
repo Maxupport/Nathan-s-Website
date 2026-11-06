@@ -10,6 +10,15 @@ import {
   drawShowDrafts,
 } from "./model.ts";
 
+test("oldies topic uses independent era, never the main category or unmarked songs", () => {
+  const songs = demoSongs.map((s) => ({...s, category: s.category === "老歌" ? "華文" : s.category}));
+  const items = generate(songs, "oldies", "");
+  assert.equal(items.filter((i) => i.slot === "專題").length, 5);
+  assert.ok(items.filter((i) => i.slot === "專題").every((i) => i.song.era === "2010 年以前"));
+  assert.equal(generate(songs.map((s) => ({...s, era: "2010 年起"})), "oldies", "").filter((i) => i.slot === "專題").length, 0);
+  assert.equal(generate(songs.map((s) => ({...s, era: ""})), "oldies", "").filter((i) => i.slot === "專題").length, 0);
+});
+
 test("one click creates two initial saved-ready drafts then one without changing prior shows", () => {
   const first = drawShowDrafts(demoSongs, [], "oldies", "");
   assert.equal(first.length, 2);

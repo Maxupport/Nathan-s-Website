@@ -398,7 +398,7 @@ export default function LiveAdmin() {
               <div className="live-generation">
                 <label>新歌單的五首專題
                   <select value={drawMode} disabled={drawing} onChange={(event) => setDrawMode(event.target.value as Mode)}>
-                    <option value="oldies">老歌主題</option>
+                    <option value="oldies">2010 年以前</option>
                     <option value="artist">指定歌手</option>
                   </select>
                 </label>
@@ -460,7 +460,7 @@ export default function LiveAdmin() {
                           updateShow({ mode: e.target.value as Mode })
                         }
                       >
-                        <option value="oldies">老歌主題</option>
+                        <option value="oldies">2010 年以前</option>
                         <option value="artist">指定歌手</option>
                       </select>
                     </label>
@@ -834,7 +834,7 @@ export default function LiveAdmin() {
                 <thead>
                   <tr>
                     <th>歌曲／演唱者</th>
-                    <th>主分類</th>
+                    <th>主分類</th><th>歌曲年代</th>
                     <th>認真演</th>
                     <th>炫技</th>
                     <th>開場＆壓軸</th>
@@ -872,6 +872,7 @@ export default function LiveAdmin() {
                           ))}
                         </select>
                       </td>
+                      <td><select aria-label={`${song.title}歌曲年代`} value={song.era ?? ""} onChange={(e) => setSongs((old) => old.map((s) => s.id === song.id ? {...s, era: e.target.value as Song["era"]} : s))}><option value="">未標年代</option><option>2010 年以前</option><option>2010 年起</option></select></td>
                       {(
                         ["serious", "showcase", "opener", "ready"] as const
                       ).map((field, i) => (

@@ -27,6 +27,8 @@ function string(value: unknown, max = 2000) {
 export function parseSong(value: unknown): Song {
   const s = object(value);
   const category = string(s.category, 20);
+  const era = string(s.era ?? "", 20);
+  if (!["", "2010 年以前", "2010 年起"].includes(era)) throw new Error("歌曲年代不正確。");
   if (category && !categories.includes(category as (typeof categories)[number]))
     throw new Error("歌曲分類不正確。");
   for (const key of ["ready", "showcase", "serious", "opener"])
@@ -39,6 +41,7 @@ export function parseSong(value: unknown): Song {
     title,
     artist: string(s.artist, 100),
     category: category as Song["category"],
+    era: era as Song["era"],
     ready: s.ready as boolean,
     showcase: s.showcase as boolean,
     serious: s.serious as boolean,
@@ -186,6 +189,7 @@ export function decodeAdmin(value: unknown): AdminState {
           title: String(r[1]),
           artist: String(r[2] ?? ""),
           category: String(r[3] ?? ""),
+          era: String(r[17] ?? ""),
           serious: r[4] === "是",
           showcase: r[5] === "是",
           opener: r[6] === "是",
