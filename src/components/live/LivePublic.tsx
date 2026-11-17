@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { emptyServices, parseServices, serviceTopic, type ServiceLink } from "@/lib/live/services";
 import { safeLyricsUrl } from "@/lib/live/lyrics";
 import {
   ArrowDown,
@@ -103,6 +104,28 @@ export default function LivePublic() {
   const [publicShows, setPublicShows] = useState<Show[]>([]);
   const shows = managed ? publicShows : demoShows;
   const [showError, setShowError] = useState("");
+  const [services, setServices] = useState<ServiceLink[]>([]);
+  useEffect(() => {
+    let stopped = false, pending = false;
+    const controller = new AbortController();
+    async function update() {
+      if (pending || document.visibilityState !== "visible") return;
+      pending = true;
+      try {
+        const response = await fetch("/api/live/services", {signal: controller.signal});
+        if (!response.ok) throw new Error();
+        const value = await response.json();
+        if (!Array.isArray(value.services)) throw new Error();
+        const values = parseServices(emptyServices().map(s => value.services.find((v: ServiceLink) => v.topic === s.topic) ?? s));
+        if (!stopped) setServices(values);
+      } catch { if (!stopped) setServices([]); }
+      finally { pending = false; }
+    }
+    void update();
+    const interval = setInterval(() => void update(), 30000);
+    document.addEventListener("visibilitychange", update);
+    return () => { stopped = true; controller.abort(); clearInterval(interval); document.removeEventListener("visibilitychange", update); };
+  }, []);
   // Public endpoint returns only published show fields, never intake or contacts.
   useEffect(() => {
     if (!managed) return;
@@ -472,6 +495,7 @@ export default function LivePublic() {
         <InteractionForm
           kind={kind}
           topic={topic}
+          service={services.find(s => s.topic === serviceTopic(kind, topic))}
           completed={completed}
           onClose={() => setKind(null)}
           onComplete={() => setCompleted(true)}

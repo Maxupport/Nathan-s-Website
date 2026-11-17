@@ -31,12 +31,14 @@ import {
   type Slot,
   type Song,
 } from "@/lib/live/model";
+import ServiceLinkAdmin from "./ServiceLinkAdmin";
 import { useLive } from "./LiveProvider";
 
-type Tab = "shows" | "songs" | "inbox";
+type Tab = "shows" | "songs" | "inbox" | "services";
 const tabs: Array<{ key: Tab; label: string; icon: typeof Inbox }> = [
   { key: "shows", label: "演出與歌單", icon: ListMusic },
   { key: "songs", label: "歌曲資料庫", icon: Music2 },
+  { key: "services", label: "服務連結設定", icon: ArrowUpRight },
   { key: "inbox", label: "觀眾收件匣", icon: Inbox },
 ];
 export default function LiveAdmin() {
@@ -340,7 +342,7 @@ export default function LiveAdmin() {
           </Link>
         </header>
         <div role="status" aria-live="polite">
-          {managed && (
+          {managed && tab !== "services" && (
             <div className="live-notice">
               <div>
                 <p>{syncMessage || "正在讀取 Google Sheet…"}</p>
@@ -407,6 +409,7 @@ export default function LiveAdmin() {
             </strong>
           </div>
         </div>
+        <div hidden={tab !== "services"}><ServiceLinkAdmin managed={managed} /></div>
         {tab === "shows" && (
           <>
             <div className="live-workspace-heading">

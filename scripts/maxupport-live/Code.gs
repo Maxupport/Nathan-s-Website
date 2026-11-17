@@ -112,19 +112,21 @@ function doPost(e) {
         expected.charCodeAt(i) ^ (envelope.signature.charCodeAt(i) || 0);
     if (difference !== 0) return output({ ok: false });
     const request = JSON.parse(envelope.payload);
+    if (request.operation === "servicesRead") return output(liveServiceOperation(request, SpreadsheetApp.openById(spreadsheetId)));
     // Reads never hold the write lock: audience polling must not block intake.
     if (request.operation === "adminRead" || request.operation === "publicRead")
       return output(
         liveAdminOperation(request, SpreadsheetApp.openById(spreadsheetId)),
       );
     if (
-      ["adminSave", "notificationClaim", "notificationResult", "unsubscribe", "subscriptionPreference"].indexOf(
+      ["servicesSave", "adminSave", "notificationClaim", "notificationResult", "unsubscribe", "subscriptionPreference"].indexOf(
         request.operation,
       ) !== -1
     ) {
       lock = LockService.getScriptLock();
       if (!lock.tryLock(5000)) return output({ ok: false });
       const book = SpreadsheetApp.openById(spreadsheetId);
+      if (request.operation === "servicesSave") return output(liveServiceOperation(request, book));
       if (request.operation === "unsubscribe") return output(liveUnsubscribe(request, book));
       if (request.operation === "subscriptionPreference") return output(liveSubscriptionPreference(request, book));
       return output(
@@ -821,4 +823,38 @@ function liveUnsubscribe(request, book) {
 function liveSafeLyrics(value) {
   const text = String(value || "").trim();
   return text.length <= 2000 && /^https:\/\/[^\s/@:]+(?:\:[0-9]+)?(?:[/?#]|$)/i.test(text) ? text : "";
+}
+
+function liveServiceOperation(request, book) {
+  const topics = ["點歌", "保險評估", "創業想法", "聲音優化", "人生職涯", "跟我說話"];
+  const rows = liveRows(book, "LIVE 服務連結", 5);
+  const revisionOf = function (values) {
+    return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, JSON.stringify(values), Utilities.Charset.UTF_8).map(function (b) { return ("0" + ((b + 256) % 256).toString(16)).slice(-2); }).join("");
+  };
+  const revision = revisionOf(rows);
+  const current = topics.map(function (topic) {
+    const r = rows.find(function (r) { return r[0] === topic; }) || [];
+    return {topic: topic, enabled: r[1] === "是", intro: String(r[2] || ""), label: String(r[3] || ""), url: String(r[4] || "")};
+  });
+  if (request.operation === "servicesRead") return {ok: true, services: current, revision: revision};
+  if (request.operation !== "servicesSave") return {ok: false};
+  if (request.revision !== revision) return {ok: false, conflict: true};
+  if (!Array.isArray(request.services) || request.services.length !== 6) return {ok: false};
+  const normalized = [];
+  for (let i = 0; i < topics.length; i++) {
+    const matches = request.services.filter(function (s) { return s && s.topic === topics[i]; });
+    if (matches.length !== 1) return {ok: false};
+    const s = matches[0];
+    if (typeof s.enabled !== "boolean" || typeof s.intro !== "string" || s.intro.length > 300 || typeof s.label !== "string" || s.label.length > 60 || typeof s.url !== "string" || s.url.length > 2000) return {ok: false};
+    const url = s.url.trim(), label = s.label.trim(), intro = s.intro.trim();
+    if ((url && liveSafeLyrics(url) !== url) || (s.enabled && (!url || !label))) return {ok: false};
+    normalized.push({topic: topics[i], enabled: s.enabled, intro: intro, label: label, url: url});
+  }
+  let sheet = book.getSheetByName("LIVE 服務連結");
+  if (!sheet) { sheet = book.insertSheet("LIVE 服務連結"); sheet.setFrozenRows(1); }
+  sheet.getRange(1, 1, 1, 5).setValues([["互動主題", "顯示", "引導文字", "按鈕文字", "HTTPS 網址"]]);
+  sheet.getRange(2, 1, 6, 5).setValues(normalized.map(function (s) { return [s.topic, s.enabled ? "是" : "否", s.intro, s.label, s.url].map(function (v) { return /^[\s]*[=+@-]/.test(v) ? "'" + v : v; }); }));
+  if (rows.length > 6) sheet.getRange(8, 1, rows.length - 6, 5).clearContent();
+  SpreadsheetApp.flush();
+  return {ok: true, services: normalized, revision: revisionOf(liveRows(book, "LIVE 服務連結", 5))};
 }

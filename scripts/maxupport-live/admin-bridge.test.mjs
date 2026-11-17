@@ -111,6 +111,7 @@ function harness(enabled = false) {
     JSON.parse(JSON.stringify(context.liveAdminOperation(request, book)));
   return {
     call,
+    service: (request) => JSON.parse(JSON.stringify(context.liveServiceOperation(request, book))),
     tables,
     subscribe: (email, id) => context.liveSubscribe(book, email, id),
     unsubscribe: (id, token) => context.liveUnsubscribe({id, token}, book),
@@ -353,4 +354,31 @@ test("shows persist as snapshots; anonymization affects only explicit IDs", () =
   assert.equal(loaded.submissions[0][5], "");
   assert.equal(loaded.submissions[0][9], "");
   assert.equal(loaded.submissions[0][0], "raw-1");
+});
+
+test("service settings initialize disabled, save independently and reject stale writes", () => {
+  const h = harness();
+  const songsBefore = JSON.stringify(h.tables["歌曲主資料"]);
+  const initial = h.service({operation: "servicesRead"});
+  assert.equal(initial.services.length, 6);
+  assert.ok(initial.services.every(s => !s.enabled));
+  initial.services[0] = {...initial.services[0], enabled: true, intro: "See more", label: "Instagram", url: "https://www.instagram.com/maxupport/"};
+  const saved = h.service({operation: "servicesSave", revision: initial.revision, services: initial.services});
+  assert.equal(saved.ok, true);
+  assert.notEqual(saved.revision, initial.revision);
+  assert.equal(h.service({operation: "servicesRead"}).services[0].url, initial.services[0].url);
+  assert.equal(h.service({operation: "servicesSave", revision: initial.revision, services: initial.services}).conflict, true);
+  assert.equal(JSON.stringify(h.tables["歌曲主資料"]), songsBefore);
+  assert.equal(h.tables["LIVE 通知佇列"], undefined);
+  const disabled = saved.services.map(s => ({...s, enabled: false}));
+  assert.equal(h.service({operation: "servicesSave", revision: saved.revision, services: disabled}).ok, true);
+  assert.ok(h.service({operation: "servicesRead"}).services.every(s => !s.enabled));
+});
+test("bridge refuses invalid services before creating or modifying a sheet", () => {
+  for (const mutate of [s => s[0].url = "javascript:alert(1)", s => s[0].url = "https://name:secret@example.com", s => s[0].enabled = true, s => s[1].topic = s[0].topic]) {
+    const h = harness(), state = h.service({operation: "servicesRead"});
+    mutate(state.services);
+    assert.equal(h.service({operation: "servicesSave", revision: state.revision, services: state.services}).ok, false);
+    assert.equal(h.tables["LIVE 服務連結"], undefined);
+  }
 });

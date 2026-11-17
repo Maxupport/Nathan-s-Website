@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { Check, X, ArrowRight } from "lucide-react";
+import { safeLyricsUrl } from "@/lib/live/lyrics";
+import type { ServiceLink } from "@/lib/live/services";
+import { Check, X, ArrowRight, ArrowUpRight } from "lucide-react";
 import { useLive } from "./LiveProvider";
 import type { ConversationTopic, Kind, Submission } from "@/lib/live/model";
 import { submitInteraction, SubmissionError } from "@/lib/live/submit";
@@ -10,12 +12,14 @@ export default function InteractionForm({
   kind,
   topic,
   completed,
+  service,
   onClose,
   onComplete,
 }: {
   kind: Kind;
   topic?: ConversationTopic;
   completed: boolean;
+  service?: ServiceLink;
   onClose: () => void;
   onComplete: () => void;
 }) {
@@ -226,6 +230,12 @@ export default function InteractionForm({
                         ? "從一句你好開始。"
                         : "有什麼話，都可以說。"}
             </h2>
+            {service?.enabled && service.label && safeLyricsUrl(service.url) && (
+              <section className="live-service-callout" aria-label={`${service.topic}服務介紹`}>
+                {service.intro && <p>{service.intro}</p>}
+                <a className="live-button secondary" href={safeLyricsUrl(service.url)} target="_blank" rel="noopener noreferrer">{service.label}<ArrowUpRight size={17} aria-hidden="true"/><span className="live-sr-only">（另開分頁）</span></a>
+              </section>
+            )}
             <p className="live-muted">
               {intakeEnabled
                 ? "填寫必填問題即可送出，但如果希望收到回覆，請務必留下聯絡資訊給我～"
